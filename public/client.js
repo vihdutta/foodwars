@@ -18,19 +18,11 @@ const app = new Application({
   antialias: true,
 });
 
-const background = await Assets.load("images/img.jpg");
-const backgroundSprite = Sprite.from(background);
-backgroundSprite.x = 0;
-backgroundSprite.y = 0;
-backgroundSprite.scale.set(2, 2);
-
 app.renderer.background.color = "#23395D";
 app.renderer.resize(window.innerWidth, window.innerHeight);
 app.renderer.view.style.position = "absolute";
 
 const Graphics = PIXI.Graphics;
-const sample = new Graphics();
-sample.beginFill(0xffffff).drawRect(0, 0, 200, 2000).endFill();
 
 // ADDING PLAYER FIRST SO I CAN PUT COORDINATESTEXT
 const playerTexture = await Assets.load("images/player.png");
@@ -49,7 +41,7 @@ coordinatesText.x = 0;
 coordinatesText.y = 0;
 
 setInterval(() => {
-  coordinatesText.text = "(" + player.x/50 + ", " + player.y/50 + ")";
+  coordinatesText.text = "(" + player.x + ", " + player.y + ")";
 }, 100);
 
 const FPSText = new PIXI.Text("(" + player.x + ", " + player.y + ")", {
@@ -103,6 +95,25 @@ shieldBar.endFill();
 shieldBar.x = 0;
 shieldBar.y = 0;
 
+let hitboxTiles = [];
+
+function testHitboxTile(x, y) {
+  const hitboxTile = new Graphics();
+  hitboxTile.lineStyle({ width: 2, color: 0x000000, alpha: 0.5});
+  hitboxTile.beginFill(0xFFFFFF);
+  hitboxTile.drawRect(0, 0, 100, 100);
+  hitboxTile.endFill();
+  hitboxTile.x = x;
+  hitboxTile.y = y;
+  app.stage.addChild(hitboxTile);
+  hitboxTiles.push(hitboxTile);
+}
+
+for (let i = 0; i < 2; i++) {
+  for (let j = 0; j < 2; j++) {
+    testHitboxTile(i * 100, j * 100);
+  }
+}
 // CHANGING PROPERTIES
 const mouse = {
   x: 0,
@@ -460,13 +471,11 @@ app.ticker.add(() => {
 
 // EXTRA DEV STUFF
 if (DEV) {
-  setInterval(() => {
     console.log("bullets: " + bulletSprites.length);
     console.log("boundingBoxes: " + Object.keys(boundingBoxes).length);
     console.log("notifications: " + notificationContainer.children.length);
     console.log("enemies: " + Object.keys(enemySprites).length);
     console.log();
-  }, 1000);
 }
 
 function toggleDEV() {
@@ -497,9 +506,7 @@ function frustumCulling(data) {
 }
 // DISPLAY ON CANVAS
 document.body.appendChild(app.view);
-app.stage.addChild(backgroundSprite);
 app.stage.addChild(player);
-app.stage.addChild(sample);
 app.stage.addChild(socketText);
 app.stage.addChild(inventory);
 app.stage.addChild(healthBar);

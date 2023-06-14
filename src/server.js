@@ -11,6 +11,29 @@ let bullets = {};
 const bulletSpeed = 15;
 const playerLength = 70;
 
+class Rectangle {
+    constructor(x, y, width, height) {
+      this.x = x;
+      this.y = y;
+      this.width = width;
+      this.height = height;
+    }
+  }
+  
+  let hitboxTiles = [];
+  
+  function testHitboxTile(x, y) {
+    const rectangle = new Rectangle(x, y, 100, 100);
+    hitboxTiles.push(rectangle);
+  }
+  
+  for (let i = 0; i < 2; i++) {
+    for (let j = 0; j < 2; j++) {
+      testHitboxTile(i * 100, j * 100);
+    }
+  }
+  
+
 // io connections
 io.on('connection', (socket) => { 
     console.log("SERVER: socket", socket.id, "connected");
@@ -47,6 +70,13 @@ io.on('connection', (socket) => {
             if (bullet.parent !== socket.id) {
                 if (checkCollision(bullet, playerBounds)) {
                     playerData.health -= 10;
+                    delete bullets[key];
+                }
+            }    
+            
+            for (const tileIndex in hitboxTiles) {
+                if (checkCollision(bullet, hitboxTiles[tileIndex])) {
+                    console.log("I-I-I BE POPPIN BOTTLES");
                     delete bullets[key];
                 }
             }
