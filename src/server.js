@@ -18,6 +18,13 @@ io.on('connection', (socket) => {
 
     // updates the player
     socket.on("serverUpdateSelf", (playerData) => {
+        if (players[playerData.id]) {
+            if (players[playerData.id].health <= 0) {
+                return;
+            }            
+        }
+
+
         let speed = 7;
         if (playerData.keyboard.shift) {
             speed += 5;
@@ -68,6 +75,10 @@ io.on('connection', (socket) => {
     });
     
     socket.on("serverUpdateNewBullet", (bulletData) => {
+        if (players[socket.id] && players[socket.id].hasOwnProperty('health') && players[socket.id].health <= 0) {
+            return;
+        }
+
         bullets[bulletData.id] = bulletData;
         io.emit("clientUpdateNewBullet", bulletData);
         // ## Fire clientUpdateAllBullets?
@@ -91,6 +102,11 @@ setInterval(() => {
         const enemies = { ...players };
         delete enemies[playerSocketId];
 
+        if (enemies[playerSocketId]) {
+            if (enemies[playerSocketId].health <= 0) {
+                delete enemies[playerSocketId];
+            }
+        }
         // Emit the updated data to the current player
         io.to(playerSocketId).emit("clientUpdateAllEnemies", enemies);
     }

@@ -8,7 +8,7 @@ socket.on("connect", () => {
 });
 
 // BASIC SETUP
-let DEV = true;
+let DEV = false;
 const playerLength = 70;
 
 const app = new Application({
@@ -40,6 +40,8 @@ player.anchor.set(0.5, 0.5);
 let health = 100;
 
 // DRAW UI ELEMENTS
+let UIElements = new PIXI.Container();
+
 const coordinatesText = new PIXI.Text("(" + player.x + ", " + player.y + ")", {
   fontFamily: "Arial",
   fontSize: 30,
@@ -220,6 +222,8 @@ socket.on("clientUpdateSelf", (playerData) => {
     healthBarValue.width = playerData.health * 5;
   } else {
     healthBarValue.width = 0;
+    app.stage.removeChild(player);
+    app.stage.removeChild(UIElements);
   }
 
   player.x = playerData.x;
@@ -498,11 +502,13 @@ document.body.appendChild(app.view);
 app.stage.addChild(backgroundSprite);
 app.stage.addChild(player);
 app.stage.addChild(sample);
-app.stage.addChild(socketText);
-app.stage.addChild(inventory);
-app.stage.addChild(healthBar);
-app.stage.addChild(healthBarValue);
-app.stage.addChild(shieldBar);
-app.stage.addChild(coordinatesText);
-app.stage.addChild(FPSText);
+UIElements.addChild(socketText);
+UIElements.addChild(inventory);
+UIElements.addChild(healthBar);
+UIElements.addChild(healthBarValue);
+UIElements.addChild(shieldBar);
+UIElements.addChild(coordinatesText);
+UIElements.addChild(FPSText);
+app.stage.addChild(UIElements);
 app.stage.addChild(notificationContainer);
+console.log(app.stage);
