@@ -42,6 +42,11 @@ let health = 100;
 // DRAW UI ELEMENTS
 let UIElements = new PIXI.Container();
 
+const dimRectangle = new Graphics();
+dimRectangle.beginFill(0x000000, 0.2);
+dimRectangle.drawRect(player.x, player.y, window.innerWidth, window.innerHeight);
+dimRectangle.endFill();
+
 const coordinatesText = new PIXI.Text("(" + player.x + ", " + player.y + ")", {
   fontFamily: "Arial",
   fontSize: 30,
@@ -224,6 +229,12 @@ socket.on("clientUpdateSelf", (playerData) => {
     healthBarValue.width = 0;
     app.stage.removeChild(player);
     app.stage.removeChild(UIElements);
+    app.stage.addChild(dimRectangle);
+    var elements = document.getElementsByClassName("no-display");
+    for (var i = 0; i < elements.length; i++) {
+      var element = elements[i];
+      element.style.display = "block";
+    }    
   }
 
   player.x = playerData.x;
@@ -443,6 +454,9 @@ app.ticker.add(() => {
   app.stage.position.y = app.renderer.height / 2 - camera.y;
 
   // Shift UI elements with Camera
+  dimRectangle.x = player.x - app.renderer.width / 2;
+  dimRectangle.y = player.y - app.renderer.height / 2;
+
   coordinatesText.x = camera.x + 775;
   coordinatesText.y = camera.y + 420;
 
@@ -484,19 +498,6 @@ document.addEventListener("keydown", (event) => {
   }
 });
 
-// UTILITY FUNCTIONS
-function frustumCulling(data) {
-  if (
-    data.x > camera.x - app.renderer.width / 2 - 100 &&
-    data.x < camera.x + app.renderer.width / 2 + 100 &&
-    data.y > camera.y - app.renderer.height / 2 - 100 &&
-    data.y < camera.y + app.renderer.height / 2 + 100
-  ) {
-    return true;
-  } else {
-    return false;
-  }
-}
 // DISPLAY ON CANVAS
 document.body.appendChild(app.view);
 app.stage.addChild(backgroundSprite);

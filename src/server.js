@@ -124,7 +124,7 @@ setInterval(() => {
         }
     }
     //console.log("Players", players);
-    console.log(Object.keys(bullets).length);
+    //console.log(Object.keys(bullets).length);
 }, 1500);
 
 // HELPER FUNCTIONS
