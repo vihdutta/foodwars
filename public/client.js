@@ -9,6 +9,7 @@ socket.on("connect", () => {
 
 // BASIC SETUP
 let DEV = false;
+let playing = false;
 const playerLength = 70;
 
 const app = new Application({
@@ -37,14 +38,18 @@ const playerTexture = await Assets.load("images/player.png");
 const player = Sprite.from(playerTexture);
 player.scale.set(2, 2);
 player.anchor.set(0.5, 0.5);
-let health = 100;
 
 // DRAW UI ELEMENTS
 let UIElements = new PIXI.Container();
 
 const dimRectangle = new Graphics();
 dimRectangle.beginFill(0x000000, 0.2);
-dimRectangle.drawRect(player.x, player.y, window.innerWidth, window.innerHeight);
+dimRectangle.drawRect(
+  player.x,
+  player.y,
+  window.innerWidth,
+  window.innerHeight
+);
 dimRectangle.endFill();
 
 const coordinatesText = new PIXI.Text("(" + player.x + ", " + player.y + ")", {
@@ -56,7 +61,7 @@ coordinatesText.x = 0;
 coordinatesText.y = 0;
 
 setInterval(() => {
-  coordinatesText.text = "(" + player.x/50 + ", " + player.y/50 + ")";
+  coordinatesText.text = "(" + player.x / 50 + ", " + player.y / 50 + ")";
 }, 100);
 
 const FPSText = new PIXI.Text("(" + player.x + ", " + player.y + ")", {
@@ -180,7 +185,12 @@ function renderEnemies(enemiesData) {
       if (!boundingBoxes[enemyData.id]) {
         const boundingBox = new Graphics();
         boundingBox.lineStyle({ width: 1, color: 0x00ff00, alpha: 1 });
-        boundingBox.drawRect(-playerLength / 2, -playerLength / 2, playerLength, playerLength);
+        boundingBox.drawRect(
+          -playerLength / 2,
+          -playerLength / 2,
+          playerLength,
+          playerLength
+        );
         app.stage.addChild(boundingBox);
         boundingBoxes[enemyData.id] = boundingBox;
       }
@@ -223,44 +233,51 @@ setInterval(() => {
 }, 10);
 
 socket.on("clientUpdateSelf", (playerData) => {
-  if (playerData.health <= 100 && playerData.health > 0) {
-    healthBarValue.width = playerData.health * 5;
-  } else {
-    healthBarValue.width = 0;
-    app.stage.removeChild(player);
-    app.stage.removeChild(UIElements);
-    app.stage.addChild(dimRectangle);
-    var elements = document.getElementsByClassName("no-display");
-    for (var i = 0; i < elements.length; i++) {
-      var element = elements[i];
-      element.style.display = "block";
-    }    
-  }
-
-  player.x = playerData.x;
-  player.y = playerData.y;
-  player.rotation = playerData.rotation;
-  health = playerData.health;
-
-  if (DEV) {
-    if (!boundingBoxes[playerData.id]) {
-      const boundingBox = new Graphics();
-      boundingBox.lineStyle({ width: 1, color: 0x00ff00, alpha: 1 });
-      boundingBox.drawRect(-playerLength / 2, -playerLength / 2, playerLength, playerLength);
-      app.stage.addChild(boundingBox);
-      boundingBoxes[playerData.id] = boundingBox;
+  if (playing) {
+    if (playerData.health <= 100 && playerData.health > 0) {
+      healthBarValue.width = playerData.health * 5;
+    } else {
+      console.log("dead");
+      playing = false;
+      healthBarValue.width = 0;
+      app.stage.removeChild(player);
+      app.stage.removeChild(UIElements);
+      app.stage.addChild(dimRectangle);
+      var elements = document.getElementsByClassName("container-fluid");
+      for (var i = 0; i < elements.length; i++) {
+        var element = elements[i];
+        element.style.display = "block";
+      }
     }
+    player.x = playerData.x;
+    player.y = playerData.y;
+    player.rotation = playerData.rotation;
 
-    const boundingBox = boundingBoxes[playerData.id];
-    boundingBox.x = playerData.x;
-    boundingBox.y = playerData.y;
-    boundingBox.width = playerLength;
-    boundingBox.height = playerLength;
+    if (DEV) {
+      if (!boundingBoxes[playerData.id]) {
+        const boundingBox = new Graphics();
+        boundingBox.lineStyle({ width: 1, color: 0x00ff00, alpha: 1 });
+        boundingBox.drawRect(
+          -playerLength / 2,
+          -playerLength / 2,
+          playerLength,
+          playerLength
+        );
+        app.stage.addChild(boundingBox);
+        boundingBoxes[playerData.id] = boundingBox;
+      }
+
+      const boundingBox = boundingBoxes[playerData.id];
+      boundingBox.x = playerData.x;
+      boundingBox.y = playerData.y;
+      boundingBox.width = playerLength;
+      boundingBox.height = playerLength;
+    }
   }
 });
 
 // BULLETS
-let bulletSprites = [];
+let bulletSprites = {};
 const bulletSpeed = 15;
 
 const bulletTexture = await Assets.load("images/bullet.png");
@@ -279,16 +296,18 @@ function handleMouseUp(event) {
 }
 
 function fireBullet() {
-  const offsetFactor = 50; // Adjust this value to control the offset
-  socket.emit("serverUpdateNewBullet", {
-    id: Math.random(),
-    parent: socket.id,
-    x: player.x + Math.cos(player.rotation - Math.PI / 2) * offsetFactor,
-    y: player.y + Math.sin(player.rotation - Math.PI / 2) * offsetFactor,
-    width: 40, // width and height really rough estimate of the bullet size. real range 35-45 (idk why)
-    height: 40,
-    rotation: player.rotation - Math.PI / 2,
-  });
+  if (playing) {
+    const offsetFactor = 50; // Adjust this value to control the offset
+    socket.emit("serverUpdateNewBullet", {
+      id: Math.random(),
+      parent: socket.id,
+      x: player.x + Math.cos(player.rotation - Math.PI / 2) * offsetFactor,
+      y: player.y + Math.sin(player.rotation - Math.PI / 2) * offsetFactor,
+      width: 40, // width and height really rough estimate of the bullet size. real range 35-45 (idk why)
+      height: 40,
+      rotation: player.rotation - Math.PI / 2,
+    });
+  }
 }
 
 function shootBulletsContinuously() {
@@ -306,34 +325,31 @@ document.addEventListener("mousedown", handleMouseDown);
 document.addEventListener("mouseup", handleMouseUp);
 
 socket.on("clientUpdateNewBullet", (bulletData) => {
-  const bullet = Sprite.from(bulletTexture);
-  bullet.scale.set(1, 1);
-  bullet.anchor.set(0.5, 0.5);
-  bullet.x = bulletData.x;
-  bullet.y = bulletData.y;
-  bullet.width = bulletData.width;
-  bullet.height = bulletData.height;
-  bullet.rotation = bulletData.rotation;
-  app.stage.addChild(bullet);
-  bulletSprites.push(bullet);
+  const bulletSprite = Sprite.from(bulletTexture);
+  bulletSprite.scale.set(1, 1);
+  bulletSprite.anchor.set(0.5, 0.5);
+  bulletSprite.x = bulletData.x;
+  bulletSprite.y = bulletData.y;
+  bulletSprite.width = bulletData.width;
+  bulletSprite.height = bulletData.height;
+  bulletSprite.rotation = bulletData.rotation;
+  app.stage.addChild(bulletSprite);
+  bulletSprites[bulletData.id] = bulletSprite;
 });
 
 socket.on("clientUpdateAllBullets", (bulletsData) => {
-  for (let i = bulletSprites.length - 1; i >= 0; i--) {
-    if (bulletSprites[i] !== undefined) {
-      bulletSprites[i].x += Math.cos(bulletSprites[i].rotation) * bulletSpeed;
-      bulletSprites[i].y += Math.sin(bulletSprites[i].rotation) * bulletSpeed;
-    }
+  const connectedBulletIds = Object.keys(bulletsData);
 
-    if (
-      bulletSprites[i].x > 10000 ||
-      bulletSprites[i].x < -10000 ||
-      bulletSprites[i].y > 10000 ||
-      bulletSprites[i].y < -10000
-    ) {
-      app.stage.removeChild(bulletSprites[i]); // Remove the bullet sprite from the stage
-      bulletSprites.splice(i, 1); // Remove the bullet sprite from the bulletSprites array
+  for (const bulletId in bulletSprites) {
+    if (!connectedBulletIds.includes(bulletId)) {
+      const bulletSprite = bulletSprites[bulletId];
+      app.stage.removeChild(bulletSprite);
+      delete bulletSprites[bulletId];
     }
+    const bulletData = bulletsData[bulletId];
+    const bulletSprite = bulletSprites[bulletData.id];
+    bulletSprite.x = bulletData.x;
+    bulletSprite.y = bulletData.y;
   }
 
   if (DEV) {
@@ -350,7 +366,7 @@ socket.on("clientUpdateAllBullets", (bulletsData) => {
         app.stage.addChild(boundingBox);
         boundingBoxes[bulletId] = {
           box: boundingBox,
-          timer: 3
+          timer: 3,
         };
       }
 
@@ -408,19 +424,16 @@ socket.on("notification", (text) => {
 });
 
 setInterval(() => {
-  socket.emit("serverUpdateSelf", {
-    id: socket.id,
-    health: health,
-    x: player.x,
-    y: player.y,
-    rotation:
-      Math.atan2(
+  if (playing) {
+    socket.emit("serverUpdateSelf", {
+      id: socket.id,
+      rotation: Math.atan2(
         mouse.y - app.renderer.height / 2,
         mouse.x - app.renderer.width / 2
-      ) +
-      Math.PI / 2, //2 * Math.PI
-    keyboard: keyboard,
-  });
+      ) + Math.PI / 2,
+      keyboard: keyboard
+    });
+  }
 }, 10);
 
 // FRUSTUM CULLING
@@ -483,12 +496,23 @@ app.ticker.add(() => {
 });
 
 // EXTRA DEV STUFF
-
-
 function toggleDEV() {
   DEV = !DEV;
   console.log("Variable toggled:", DEV);
 }
+
+var button = document.getElementById("spawn");
+button.addEventListener("click", function () {
+  playing = true;
+  app.stage.addChild(player);
+  app.stage.addChild(UIElements);
+  app.stage.removeChild(dimRectangle);
+  var elements = document.getElementsByClassName("container-fluid");
+  for (var i = 0; i < elements.length; i++) {
+    var element = elements[i];
+    element.style.display = "none";
+  }
+});
 
 // Keydown event listener
 document.addEventListener("keydown", (event) => {
@@ -501,7 +525,6 @@ document.addEventListener("keydown", (event) => {
 // DISPLAY ON CANVAS
 document.body.appendChild(app.view);
 app.stage.addChild(backgroundSprite);
-app.stage.addChild(player);
 app.stage.addChild(sample);
 UIElements.addChild(socketText);
 UIElements.addChild(inventory);
@@ -509,7 +532,6 @@ UIElements.addChild(healthBar);
 UIElements.addChild(healthBarValue);
 UIElements.addChild(shieldBar);
 UIElements.addChild(coordinatesText);
-UIElements.addChild(FPSText);
-app.stage.addChild(UIElements);
+UIElements.addChild(FPSText); // removed UIElements since that is added seperately (however all elems inside need to be added to it beforehand)
 app.stage.addChild(notificationContainer);
-console.log(app.stage);
+app.stage.addChild(dimRectangle);
