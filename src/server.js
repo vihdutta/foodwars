@@ -64,20 +64,20 @@ io.on("connection", (socket) => {
     };
 
     Object.entries(bullets).forEach(([bulletId, bullet]) => {
-      if (bullet.parent !== socket.id) {
+      if (bullet.parent_id !== socket.id) { // if the bullet isn't fired from the same person check collision
         if (checkCollision(bullet, playerBounds)) {
             players[playerData.id].health -= 10;
-          delete bullets[bulletId];
+            delete bullets[bulletId];
+
+            if (players[playerData.id].health <= 0) {
+              console.log(bullet.parent_username + " killed " + playerData.username);
+              io.emit("notification", bullet.parent_username + " killed " + playerData.username);
+              socket.emit("clientUpdateSelf", players[playerData.id]);
+              return;
+            }
         }
       }
     });
-
-    if (players[playerData.id].health <= 0) {
-      console.log(socket.id + " died");
-      io.emit("notification", socket.id + " died");
-      socket.emit("clientUpdateSelf", players[playerData.id]);
-      return;
-    }
 
     players[playerData.id] = { ...playerData, 
         health: players[playerData.id].health,

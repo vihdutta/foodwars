@@ -167,7 +167,7 @@ const enemyTexture = await Assets.load("images/enemies.png");
 function renderEnemies(enemiesData) {
   for (const enemyId in enemiesData) {
     const enemyData = enemiesData[enemyId];
-    if (!enemySprites[enemyData.id]) {
+    if (!enemySprites[enemyData.id] && enemiesData[enemyId].health > 0) {
       // Create a new PIXI sprite for the player
       const enemySprite = Sprite.from(enemyTexture);
       enemySprite.scale.set(2, 2);
@@ -209,7 +209,7 @@ socket.on("clientUpdateAllEnemies", (enemiesData) => {
   // Iterate over the existing player sprites
   for (const enemyId in enemySprites) {
     // Check if the player is still connected
-    if (!connectedEnemyIds.includes(enemyId)) {
+    if (!connectedEnemyIds.includes(enemyId) || enemiesData[enemyId].health <= 0) {
       // Player is disconnected, remove the sprite
       const enemySprite = enemySprites[enemyId];
       app.stage.removeChild(enemySprite);
@@ -219,6 +219,7 @@ socket.on("clientUpdateAllEnemies", (enemiesData) => {
 
   renderEnemies(enemiesData);
 });
+
 
 let boundingBoxes = {};
 
@@ -300,11 +301,12 @@ function fireBullet() {
     const offsetFactor = 50; // Adjust this value to control the offset
     socket.emit("serverUpdateNewBullet", {
       id: Math.random(),
-      parent: socket.id,
+      parent_id: socket.id,
+      parent_username: document.getElementById("name").value,
       x: player.x + Math.cos(player.rotation - Math.PI / 2) * offsetFactor,
       y: player.y + Math.sin(player.rotation - Math.PI / 2) * offsetFactor,
-      width: 40, // width and height really rough estimate of the bullet size. real range 35-45 (idk why)
-      height: 40,
+      width: 35, // width and height really rough estimate of the bullet size. real range 35-45 (idk why)
+      height: 35,
       rotation: player.rotation - Math.PI / 2,
     });
   }
@@ -427,6 +429,7 @@ setInterval(() => {
   if (playing) {
     socket.emit("serverUpdateSelf", {
       id: socket.id,
+      username: document.getElementById("name").value,
       rotation: Math.atan2(
         mouse.y - app.renderer.height / 2,
         mouse.x - app.renderer.width / 2
