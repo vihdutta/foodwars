@@ -10,6 +10,7 @@ socket.on("connect", () => {
 // BASIC SETUP
 let DEV = false;
 let playing = false;
+let username = " ";
 const playerLength = 70;
 
 const app = new Application({
@@ -61,7 +62,7 @@ coordinatesText.x = 0;
 coordinatesText.y = 0;
 
 setInterval(() => {
-  coordinatesText.text = "(" + player.x / 50 + ", " + player.y / 50 + ")";
+  coordinatesText.text = "(" + Math.round(player.x / 50) + ", " + Math.round(player.y / 50) + ")";
 }, 100);
 
 const FPSText = new PIXI.Text("(" + player.x + ", " + player.y + ")", {
@@ -302,7 +303,7 @@ function fireBullet() {
     socket.emit("serverUpdateNewBullet", {
       id: Math.random(),
       parent_id: socket.id,
-      parent_username: document.getElementById("name").value,
+      parent_username: username,
       x: player.x + Math.cos(player.rotation - Math.PI / 2) * offsetFactor,
       y: player.y + Math.sin(player.rotation - Math.PI / 2) * offsetFactor,
       width: 35, // width and height really rough estimate of the bullet size. real range 35-45 (idk why)
@@ -397,7 +398,7 @@ function notification(text) {
 
   const notification = new PIXI.Text(text, {
     fontFamily: "Arial",
-    fontSize: 20,
+    fontSize: 21,
     fill: "white",
     align: "center",
   });
@@ -429,7 +430,7 @@ setInterval(() => {
   if (playing) {
     socket.emit("serverUpdateSelf", {
       id: socket.id,
-      username: document.getElementById("name").value,
+      username: username,
       rotation: Math.atan2(
         mouse.y - app.renderer.height / 2,
         mouse.x - app.renderer.width / 2
@@ -515,7 +516,23 @@ button.addEventListener("click", function () {
     var element = elements[i];
     element.style.display = "none";
   }
+  username = returnUsername();
 });
+
+function returnUsername() {
+  username = document.getElementById("username").value;
+  if (username == "") {
+  const arr1 = ['Fluffy', 'Sparkling', 'Dazzling', 'Vibrant', 'Mysterious', 'Delirious', 'Based', 'Monstrous', 'Swooning'];
+  const arr2 = ['Ultra', 'Super', 'Dominant', 'Cool', 'Radiant', 'Magnificent', 'Glorious', 'Savage', 'Sick', 'Slick', 'Sneaky', 'Sne'];
+  const arr3 = ['Man', 'Unicorn', 'Billy', 'Emmy', 'Bob', 'Chad', 'Chadwick'];
+  
+    username += arr1[Math.floor(Math.random() * arr1.length)];
+    username += arr2[Math.floor(Math.random() * arr2.length)];
+    username += arr3[Math.floor(Math.random() * arr3.length)];
+    document.getElementById("username").value = username;
+  }
+  return username.slice(0, 12);
+}
 
 // Keydown event listener
 document.addEventListener("keydown", (event) => {

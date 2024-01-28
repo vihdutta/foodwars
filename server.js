@@ -38,9 +38,9 @@ io.on("connection", (socket) => {
         return;
     }
 
-    let speed = 7;
+    let speed = 4;
     if (playerData.keyboard.shift) {
-      speed += 5;
+      speed += 2;
     }
 
     if (playerData.keyboard.w) {
@@ -167,5 +167,7 @@ function checkCollision(aBox, bBox) {
 const port = 6969;
 app.use(express.static("public"));
 app.use("/pixi", express.static("./node_modules/pixi.js/dist/"));
-server.listen(port);
-console.log("SERVER STARTED");
+
+server.listen(port, () => {
+  console.log("SERVER STARTED");
+});
