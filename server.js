@@ -16,6 +16,11 @@ io.on("connection", (socket) => {
   console.log("SERVER: socket", socket.id, "connected");
   io.emit("notification", socket.id + " connected");
 
+  // Handle ping-pong
+  socket.on('ping', (timestamp) => {
+    socket.emit('pong', timestamp);
+  });
+
   // updates the player
   socket.on("serverUpdateSelf", (playerData) => {
     if (players[playerData.id]) {

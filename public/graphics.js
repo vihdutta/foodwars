@@ -66,7 +66,7 @@ export function fps_text_init(app, player) {
     FPSText.y = 0;
 
     setInterval(() => {
-        FPSText.text = "FPS: " + app.ticker.FPS.toFixed(2);
+        FPSText.text = "FPS: " + app.ticker.FPS.toFixed(0);
     }, 100);
 
     return FPSText;
@@ -102,17 +102,6 @@ export function health_bar_value_init() {
     healthBarValue.x = 0;
     healthBarValue.y = 0;
     return healthBarValue;
-}
-
-export function shield_bar_init() {
-    const shieldBar = new Graphics();
-    shieldBar.lineStyle({ width: 3, color: 0x000000, alpha: 0.3 });
-    shieldBar.beginFill(0x0198ef);
-    shieldBar.drawRoundedRect(0, 0, 500, 25, 5);
-    shieldBar.endFill();
-    shieldBar.x = 0;
-    shieldBar.y = 0;
-    return shieldBar;
 }
 
 export function socket_text_init(socket) {
@@ -177,4 +166,16 @@ export function bullet_count_init() {
     bulletCount.y = 0;
 
     return bulletCount;
+}
+
+export function ping_init() {
+    const pingText = new PIXI.Text("Ping: 0ms", {
+        fontFamily: "Arial",
+        fontSize: 30,
+        fill: "ffffff",
+    });
+    pingText.x = 0;
+    pingText.y = 0;
+
+    return pingText;
 }

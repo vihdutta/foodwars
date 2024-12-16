@@ -1,4 +1,4 @@
-import { background_init, menu_dimmer_init, player_init, coordinates_text_init, fps_text_init, inventory_init, health_bar_init, health_bar_value_init, shield_bar_init, socket_text_init, notification_init, bullet_count_init } from './graphics.js';
+import { background_init, menu_dimmer_init, player_init, coordinates_text_init, fps_text_init, inventory_init, health_bar_init, health_bar_value_init, socket_text_init, notification_init, bullet_count_init, ping_init } from './graphics.js';
 import { handleDevBoundingBox, handleDevBulletBoundingBox, handleDevEnemyBoundingBox } from './dev.js';
 import { returnUsername } from './util.js';
 import { mouse, keyboard, handleMouseMove, handleKeyDown, handleKeyUp } from './movement.js';
@@ -12,6 +12,7 @@ let dev = false;
 let playing = false;
 let username = " ";
 let UIElements = new PIXI.Container();
+let lastPingSentTime = 0;
 const playerLength = 70;
 
 // setup socket
@@ -36,10 +37,10 @@ const FPSText = fps_text_init(app, player);
 const inventory = inventory_init();
 const healthBar = health_bar_init();
 const healthBarValue = health_bar_value_init();
-const shieldBar = shield_bar_init();
 const socketText = socket_text_init(socket);
 const { notificationContainer, notification } = notification_init();
 const bulletCount = bullet_count_init();
+const pingText = ping_init();
 
 // EVENT LISTENERS
 window.addEventListener("keydown", handleKeyDown);
@@ -264,7 +265,12 @@ function handleWheel(event) {
 window.addEventListener("wheel", handleWheel);
 
 app.ticker.add(() => {
-  updateCamera(app, player, camera, UIElements, dimRectangle, coordinatesText, FPSText, socketText, inventory, healthBar, healthBarValue, shieldBar, notificationContainer, bulletCount);
+  updateCamera(app, player, 
+    camera, UIElements, 
+    dimRectangle, coordinatesText, 
+    FPSText, socketText, inventory, 
+    healthBar, healthBarValue, notificationContainer, 
+    bulletCount, pingText);
 });
 
 // when spawn is pressed
@@ -290,15 +296,30 @@ document.addEventListener("keydown", (event) => {
   }
 });
 
+// PING
+socket.on('pong', (serverTimestamp) => {
+  const ping = Date.now() - lastPingSentTime;
+  pingText.text = "Ping: " + ping + "ms";
+});
+
+function sendPing() {
+  const now = Date.now();
+  socket.emit('ping', now);
+  lastPingSentTime = now;
+}
+
+setInterval(sendPing, 1000);
+
+
 // DISPLAY ON CANVAS
 document.body.appendChild(app.view);
 UIElements.addChild(socketText);
 UIElements.addChild(inventory);
 UIElements.addChild(healthBar);
 UIElements.addChild(healthBarValue);
-UIElements.addChild(shieldBar);
 UIElements.addChild(coordinatesText);
 UIElements.addChild(FPSText); // removed UIElements since that is added seperately (however all elems inside need to be added to it beforehand)
 UIElements.addChild(bulletCount);
+UIElements.addChild(pingText);
 app.stage.addChild(notificationContainer);
 app.stage.addChild(dimRectangle);
