@@ -18,7 +18,7 @@ export function hideSpritesOutsideScreen(app) {
     });
 }
 
-export function updateCamera(app, player, camera, UIElements, dimRectangle, coordinatesText, FPSText, socketText, inventory, healthBar, healthBarValue, shieldBar, notificationContainer) {
+export function updateCamera(app, player, camera, UIElements, dimRectangle, coordinatesText, FPSText, socketText, inventory, healthBar, healthBarValue, shieldBar, notificationContainer, bulletCount) {
     hideSpritesOutsideScreen(app);
     // Adjust the camera position to keep the player in the middle
     camera.x = player.x;
@@ -53,4 +53,8 @@ export function updateCamera(app, player, camera, UIElements, dimRectangle, coor
 
     notificationContainer.x = camera.x + 550;
     notificationContainer.y = camera.y - 420;
+
+    bulletCount.x = camera.x + 550;
+    bulletCount.y = camera.y - 420;
+
 }

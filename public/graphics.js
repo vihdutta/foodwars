@@ -166,3 +166,15 @@ export function notification_init() {
 
     return { notificationContainer, notification };
 }
+
+export function bullet_count_init() {
+    const bulletCount = new PIXI.Text("Bullets: 0", {
+        fontFamily: "Arial",
+        fontSize: 30,
+        fill: "ffffff",
+    });
+    bulletCount.x = 0;
+    bulletCount.y = 0;
+
+    return bulletCount;
+}

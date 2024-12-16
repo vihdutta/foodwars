@@ -1,4 +1,4 @@
-import { background_init, menu_dimmer_init, player_init, coordinates_text_init, fps_text_init, inventory_init, health_bar_init, health_bar_value_init, shield_bar_init, socket_text_init, notification_init } from './graphics.js';
+import { background_init, menu_dimmer_init, player_init, coordinates_text_init, fps_text_init, inventory_init, health_bar_init, health_bar_value_init, shield_bar_init, socket_text_init, notification_init, bullet_count_init } from './graphics.js';
 import { handleDevBoundingBox, handleDevBulletBoundingBox, handleDevEnemyBoundingBox } from './dev.js';
 import { returnUsername } from './util.js';
 import { mouse, keyboard, handleMouseMove, handleKeyDown, handleKeyUp } from './movement.js';
@@ -8,7 +8,7 @@ import { updateCamera } from './camera.js';
 const Application = PIXI.Application;
 const Sprite = PIXI.Sprite;
 const Assets = PIXI.Assets;
-let DEV = false;
+let dev = false;
 let playing = false;
 let username = " ";
 let UIElements = new PIXI.Container();
@@ -39,10 +39,7 @@ const healthBarValue = health_bar_value_init();
 const shieldBar = shield_bar_init();
 const socketText = socket_text_init(socket);
 const { notificationContainer, notification } = notification_init();
-
-setInterval(() => {
-  coordinatesText.text = "(" + Math.round(player.x / 50) + ", " + Math.round(player.y / 50) + ")";
-}, 100);
+const bulletCount = bullet_count_init();
 
 // EVENT LISTENERS
 window.addEventListener("keydown", handleKeyDown);
@@ -71,7 +68,7 @@ function renderEnemies(enemiesData) {
     enemySprite.y = enemyData.y;
     enemySprite.rotation = enemyData.rotation;
 
-    if (DEV) {
+    if (dev) {
       handleDevEnemyBoundingBox(app, boundingBoxes, enemyData, playerLength);
     }
   }
@@ -115,7 +112,7 @@ socket.on("clientUpdateSelf", (playerData) => {
     player.y = playerData.y;
     player.rotation = playerData.rotation;
 
-    if (DEV) {
+    if (dev) {
       handleDevBoundingBox(app, boundingBoxes, playerData, playerLength);
     }
   }
@@ -139,6 +136,11 @@ setInterval(() => {
 // BULLETS
 let bulletSprites = {};
 
+setInterval(() => {
+  coordinatesText.text = "(" + Math.round(player.x / 50) + ", " + Math.round(player.y / 50) + ")";
+  bulletCount.text = "Bullets: " + Object.keys(bulletSprites).length;
+}, 100);
+
 const bulletTexture = await Assets.load("images/bullet.png");
 
 let isMouseDown = false;
@@ -152,6 +154,7 @@ function handleMouseDown(event) {
 function handleMouseUp(event) {
   isMouseDown = false;
   clearInterval(fireIntervalId);
+  fireIntervalId = null;
 }
 
 function fireBullet() {
@@ -171,13 +174,14 @@ function fireBullet() {
 }
 
 function shootBulletsContinuously() {
-  fireIntervalId = setInterval(() => {
-    if (isMouseDown) {
-      fireBullet();
-    } else {
-      clearInterval(fireIntervalId);
-    }
-  }, 300); // rate of fire
+  if (fireIntervalId === null) {
+    fireBullet(); // Fire immediately on mouse down
+    fireIntervalId = setInterval(() => {
+      if (isMouseDown) {
+        fireBullet();
+      }
+    }, 100); // rate of fire
+  }
 }
 
 // Attach event listeners
@@ -212,7 +216,7 @@ socket.on("clientUpdateAllBullets", (bulletsData) => {
     bulletSprite.y = bulletData.y;
   }
 
-  if (DEV) {
+  if (dev) {
     Object.keys(bulletsData).forEach((bulletId) => {
       handleDevBulletBoundingBox(app, boundingBoxes, bulletsData, bulletId);
     });
@@ -244,7 +248,7 @@ const camera = {
 };
 
 app.ticker.add(() => {
-  updateCamera(app, player, camera, UIElements, dimRectangle, coordinatesText, FPSText, socketText, inventory, healthBar, healthBarValue, shieldBar, notificationContainer);
+  updateCamera(app, player, camera, UIElements, dimRectangle, coordinatesText, FPSText, socketText, inventory, healthBar, healthBarValue, shieldBar, notificationContainer, bulletCount);
 });
 
 // when spawn is pressed
@@ -265,8 +269,8 @@ button.addEventListener("click", function () {
 // dev
 document.addEventListener("keydown", (event) => {
   if (event.key === "`") {
-    DEV = !DEV;
-    console.log("Variable toggled:", DEV);
+    dev = !dev;
+    console.log("Variable toggled:", dev);
   }
 });
 
@@ -279,5 +283,6 @@ UIElements.addChild(healthBarValue);
 UIElements.addChild(shieldBar);
 UIElements.addChild(coordinatesText);
 UIElements.addChild(FPSText); // removed UIElements since that is added seperately (however all elems inside need to be added to it beforehand)
+UIElements.addChild(bulletCount);
 app.stage.addChild(notificationContainer);
 app.stage.addChild(dimRectangle);
