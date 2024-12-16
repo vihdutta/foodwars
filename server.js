@@ -65,6 +65,9 @@ io.on("connection", (socket) => {
 
     Object.entries(bullets).forEach(([bulletId, bullet]) => {
       if (bullet.parent_id !== socket.id) { // if the bullet isn't fired from the same person check collision
+        if (Math.abs(bullet.x - playerBounds.x) > 5 && Math.abs(bullet.y - playerBounds.y) > 5) {
+          return;
+        }
         if (checkCollision(bullet, playerBounds)) {
             players[playerData.id].health -= 10;
             delete bullets[bulletId];

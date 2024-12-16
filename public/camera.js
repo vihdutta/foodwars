@@ -23,8 +23,8 @@ export function updateCamera(app, player, camera, UIElements, dimRectangle, coor
     // Adjust the camera position to keep the player in the middle
     camera.x = player.x;
     camera.y = player.y;
-    app.stage.position.x = app.renderer.width / 2 - camera.x;
-    app.stage.position.y = app.renderer.height / 2 - camera.y;
+    app.stage.position.x = app.renderer.width / 2 - camera.x * camera.scale;
+    app.stage.position.y = app.renderer.height / 2 - camera.y * camera.scale;
 
     // Shift UI elements with Camera
     dimRectangle.x = player.x - app.renderer.width / 2;
@@ -58,3 +58,4 @@ export function updateCamera(app, player, camera, UIElements, dimRectangle, coor
     bulletCount.y = camera.y - 420;
 
 }
+

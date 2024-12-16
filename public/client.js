@@ -180,7 +180,7 @@ function shootBulletsContinuously() {
       if (isMouseDown) {
         fireBullet();
       }
-    }, 100); // rate of fire
+    }, 1); // rate of fire
   }
 }
 
@@ -197,7 +197,7 @@ socket.on("clientUpdateNewBullet", (bulletData) => {
   bulletSprite.width = bulletData.width;
   bulletSprite.height = bulletData.height;
   bulletSprite.rotation = bulletData.rotation;
-  app.stage.addChild(bulletSprite);
+  app.stage.addChildAt(bulletSprite, 3);
   bulletSprites[bulletData.id] = bulletSprite;
 });
 
@@ -245,7 +245,23 @@ socket.on("notification", (text) => {
 const camera = {
   x: app.renderer.width / 2,
   y: app.renderer.height / 2,
+  scale: 1,
 };
+
+function handleWheel(event) {
+  const zoomIntensity = 0.1;
+  if (event.deltaY < 0) {
+    // Scrolling up
+    camera.scale += zoomIntensity;
+  } else {
+    // Scrolling down
+    camera.scale -= zoomIntensity;
+  }
+  camera.scale = Math.max(0.1, Math.min(camera.scale, 1.5)); // Limit the zoom level
+  app.stage.scale.set(camera.scale);
+}
+
+window.addEventListener("wheel", handleWheel);
 
 app.ticker.add(() => {
   updateCamera(app, player, camera, UIElements, dimRectangle, coordinatesText, FPSText, socketText, inventory, healthBar, healthBarValue, shieldBar, notificationContainer, bulletCount);
