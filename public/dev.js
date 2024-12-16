@@ -103,3 +103,24 @@ export function handleDevEnemyBoundingBox(app, boundingBoxes, enemyData, playerL
     boundingBox.width = playerLength;
     boundingBox.height = playerLength;
 }
+
+export function handleDevWallBoundingBox(app, boundingBoxes, wallData) {
+    if (!boundingBoxes[wallData.id]) {
+        const boundingBox = new Graphics();
+        boundingBox.lineStyle({ width: 1, color: 0xff0000, alpha: 1 });
+        boundingBox.drawRect(
+            -32,
+            -32,
+            wallData.width,
+            wallData.height
+        );
+        app.stage.addChild(boundingBox);
+        boundingBoxes[wallData.id] = boundingBox;
+    }
+
+    const boundingBox = boundingBoxes[wallData.id];
+    boundingBox.x = wallData.x;
+    boundingBox.y = wallData.y;
+    boundingBox.width = wallData.width;
+    boundingBox.height = wallData.height;
+}

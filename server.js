@@ -8,7 +8,8 @@ const io = new Server(server);
 
 let players = {};
 let bullets = {};
-const bulletSpeed = 15;
+let walls = {};
+const bulletSpeed = 5;
 const playerLength = 70;
 
 // io connections
@@ -87,6 +88,23 @@ io.on("connection", (socket) => {
       }
     });
 
+    Object.entries(walls).forEach(([wallId, wall]) => {
+      if (checkCollision(wall, playerBounds)) {
+        if (playerData.keyboard.w) {
+          players[playerData.id].y += speed;
+        }
+        if (playerData.keyboard.a) {
+          players[playerData.id].x += speed;
+        }
+        if (playerData.keyboard.s) {
+          players[playerData.id].y -= speed;
+        }
+        if (playerData.keyboard.d) {
+          players[playerData.id].x -= speed;
+        }
+      }
+    });
+
     players[playerData.id] = { ...playerData, 
         health: players[playerData.id].health,
         x: players[playerData.id].x,
@@ -106,6 +124,10 @@ io.on("connection", (socket) => {
 
     bullets[bulletData.id] = bulletData;
     io.emit("clientUpdateNewBullet", bulletData);
+  });
+
+  socket.on('addWall', (wallData) => {
+    walls[wallData.id] = wallData;
   });
 
   socket.on("disconnect", () => {
@@ -150,6 +172,10 @@ setInterval(() => {
     }
   }
 }, 1);
+
+setInterval(() => {
+  io.emit("clientUpdateAllWalls", walls);
+}, 100);
 
 setInterval(() => {
   for (const playerSocketId in players) {

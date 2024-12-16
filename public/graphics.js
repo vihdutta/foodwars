@@ -2,18 +2,62 @@ const Sprite = PIXI.Sprite;
 const Assets = PIXI.Assets;
 const Graphics = PIXI.Graphics;
 
-export async function background_init(app) {
-    const background = await Assets.load("images/img.jpg");
-    const backgroundSprite = Sprite.from(background);
-    backgroundSprite.x = 0;
-    backgroundSprite.y = 0;
-    backgroundSprite.scale.set(2, 2);
+export async function background_init(app, socket) {
+    // const background = await Assets.load("images/img.jpg");
+    // const backgroundSprite = Sprite.from(background);
+    // backgroundSprite.x = 0;
+    // backgroundSprite.y = 0;
+    // backgroundSprite.scale.set(2, 2);
 
     app.renderer.background.color = "#23395D"; // Change background color
     app.renderer.resize(window.innerWidth, window.innerHeight);
     app.renderer.view.style.position = "absolute";
 
-    app.stage.addChild(backgroundSprite);
+    // app.stage.addChild(backgroundSprite);
+    const tileMap = [
+        [1, 2, 2, 2, 3],
+        [4, 2, 2, 2, 4],
+        [4, 4, 4, 4, 4],
+        [4, 4, 4, 4, 4],
+        [4, 4, 4, 4, 4]
+      ];
+      
+      Assets.load('images/tileset.png').then((texture) => {
+        // Create textures for each tile number
+        const tileTextures = {};
+        for (let i = 1; i <= 4; i++) { // Adjusted range to include all tiles
+          const tileX = (i - 1) * 16; // Tile width is 16 pixels
+          tileTextures[i] = new PIXI.Texture(texture, new PIXI.Rectangle(tileX, 0, 16, 16)); // Updated dimensions
+        }
+
+        tileMap.forEach((row, rowIndex) => {
+          row.forEach((tile, colIndex) => {
+                if (tile > 0) { // Changed condition
+                const sprite = new PIXI.Sprite(tileTextures[tile]); // Use texture based on tile number
+        
+                // Position the sprite based on the map layout
+                sprite.x = colIndex * 128; // Horizontal position
+                sprite.y = rowIndex * 128; // Vertical position
+                sprite.scale.set(8, 8); // Adjusted scale as needed
+        
+                // Add the sprite to the stage
+                app.stage.addChild(sprite);
+
+                // Add walls to the walls data structure
+                if (tile === 4) {
+                    socket.emit('addWall', {
+                        id: `wall_${rowIndex}_${colIndex}`,
+                        x: sprite.x + 32,
+                        y: sprite.y + 32,
+                        width: sprite.width , // Adjusted to account for scale
+                        height: sprite.height  // Adjusted to account for scale
+                    });
+                }
+            }
+          });
+        });
+      });
+      
 }
 
 export async function player_init() {

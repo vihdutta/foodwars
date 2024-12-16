@@ -1,5 +1,5 @@
 import { background_init, menu_dimmer_init, player_init, coordinates_text_init, fps_text_init, inventory_init, health_bar_init, health_bar_value_init, socket_text_init, notification_init, bullet_count_init, ping_init } from './graphics.js';
-import { handleDevBoundingBox, handleDevBulletBoundingBox, handleDevEnemyBoundingBox } from './dev.js';
+import { handleDevBoundingBox, handleDevBulletBoundingBox, handleDevEnemyBoundingBox, handleDevWallBoundingBox } from './dev.js';
 import { returnUsername } from './util.js';
 import { mouse, keyboard, handleMouseMove, handleKeyDown, handleKeyUp } from './movement.js';
 import { updateCamera } from './camera.js';
@@ -29,7 +29,7 @@ const app = new Application({
   antialias: true,
 });
 
-background_init(app);
+background_init(app, socket);
 const player = await player_init();
 const dimRectangle = menu_dimmer_init(player);
 const coordinatesText = coordinates_text_init(player);
@@ -117,8 +117,13 @@ socket.on("clientUpdateSelf", (playerData) => {
       handleDevBoundingBox(app, boundingBoxes, playerData, playerLength);
     }
   }
+});
+
+socket.on("clientUpdateAllWalls", (wallsData) => {
+  for (const wallId in wallsData) {
+    handleDevWallBoundingBox(app, boundingBoxes, wallsData[wallId]);
   }
-);
+});
 
 setInterval(() => {
   if (playing) {
@@ -181,7 +186,7 @@ function shootBulletsContinuously() {
       if (isMouseDown) {
         fireBullet();
       }
-    }, 1); // rate of fire
+    }, 100); // rate of fire
   }
 }
 
@@ -198,7 +203,7 @@ socket.on("clientUpdateNewBullet", (bulletData) => {
   bulletSprite.width = bulletData.width;
   bulletSprite.height = bulletData.height;
   bulletSprite.rotation = bulletData.rotation;
-  app.stage.addChildAt(bulletSprite, 3);
+  app.stage.addChild(bulletSprite);
   bulletSprites[bulletData.id] = bulletSprite;
 });
 
