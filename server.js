@@ -69,6 +69,7 @@ io.on("connection", (socket) => {
       height: playerLength,
     };
 
+    // Check collision between bullet and player
     Object.entries(bullets).forEach(([bulletId, bullet]) => {
       if (bullet.parent_id !== socket.id) { // if the bullet isn't fired from the same person check collision
         if (Math.abs(bullet.x - playerBounds.x) > 5 && Math.abs(bullet.y - playerBounds.y) > 5) {
@@ -87,7 +88,8 @@ io.on("connection", (socket) => {
         }
       }
     });
-
+    
+    // Check collision between wall and player
     Object.entries(walls).forEach(([wallId, wall]) => {
       if (checkCollision(wall, playerBounds)) {
         if (playerData.keyboard.w) {
@@ -103,6 +105,13 @@ io.on("connection", (socket) => {
           players[playerData.id].x -= speed;
         }
       }
+
+      // Check collision between wall and bullet
+      Object.entries(bullets).forEach(([bulletId, bullet]) => {
+        if (checkCollision(wall, bullet)) {
+          delete bullets[bulletId];
+        }
+      });
     });
 
     players[playerData.id] = { ...playerData, 
@@ -198,10 +207,10 @@ function checkCollision(aBox, bBox) {
 }
 
 // final setup
-const port = 6969;
+const PORT = process.env.PORT || 8080;
 app.use(express.static("public"));
 app.use("/pixi", express.static("./node_modules/pixi.js/dist/"));
 
-server.listen(port, () => {
+server.listen(PORT, () => {
   console.log("SERVER STARTED");
 });

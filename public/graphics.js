@@ -2,6 +2,17 @@ const Sprite = PIXI.Sprite;
 const Assets = PIXI.Assets;
 const Graphics = PIXI.Graphics;
 
+function createTileMap() {
+    return [
+        [1, 2, 2, 2, 3],
+        [4, 2, 2, 2, 4],
+        [4, 2, 2, 2, 4],
+        [4, 2, 2, 2, 4],
+        [4, 2, 2, 2, 4],
+        [4, 4, 4, 2, 4]
+      ];
+}
+
 export async function background_init(app, socket) {
     // const background = await Assets.load("images/img.jpg");
     // const backgroundSprite = Sprite.from(background);
@@ -14,13 +25,7 @@ export async function background_init(app, socket) {
     app.renderer.view.style.position = "absolute";
 
     // app.stage.addChild(backgroundSprite);
-    const tileMap = [
-        [1, 2, 2, 2, 3],
-        [4, 2, 2, 2, 4],
-        [4, 4, 4, 4, 4],
-        [4, 4, 4, 4, 4],
-        [4, 4, 4, 4, 4]
-      ];
+    const tileMap = createTileMap();
       
       Assets.load('images/tileset.png').then((texture) => {
         // Create textures for each tile number
@@ -222,4 +227,16 @@ export function ping_init() {
     pingText.y = 0;
 
     return pingText;
+}
+
+export function wall_count_init() {
+    const wallCount = new PIXI.Text("Walls: " + createTileMap().flat().filter(tile => tile === 4).length, {
+        fontFamily: "Arial",
+        fontSize: 30,
+        fill: "ffffff",
+    });
+    wallCount.x = 0;
+    wallCount.y = 0;
+
+    return wallCount;
 }

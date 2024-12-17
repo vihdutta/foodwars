@@ -1,4 +1,9 @@
-import { background_init, menu_dimmer_init, player_init, coordinates_text_init, fps_text_init, inventory_init, health_bar_init, health_bar_value_init, socket_text_init, notification_init, bullet_count_init, ping_init } from './graphics.js';
+import { background_init, 
+  menu_dimmer_init, player_init, 
+  coordinates_text_init, fps_text_init,
+   inventory_init, health_bar_init, health_bar_value_init,
+    socket_text_init, notification_init, bullet_count_init, ping_init,
+    wall_count_init } from './graphics.js';
 import { handleDevBoundingBox, handleDevBulletBoundingBox, handleDevEnemyBoundingBox, handleDevWallBoundingBox } from './dev.js';
 import { returnUsername } from './util.js';
 import { mouse, keyboard, handleMouseMove, handleKeyDown, handleKeyUp } from './movement.js';
@@ -16,7 +21,22 @@ let lastPingSentTime = 0;
 const playerLength = 70;
 
 // setup socket
-const socket = io("ws://localhost:6969");
+const socketURLs = {
+  domain1: "wss://foodwars.vihdutta.com",
+  domain2: "wss://app-112130365883.us-east4.run.app ",
+  domain3: "wss://app-dwjio4hwba-uk.a.run.app ",
+};
+
+const domain = window.location.hostname;
+let socketUrl = socketURLs[domain];
+
+if (!socketUrl) {
+  socketUrl = socketURLs.domain1;
+}
+
+// Now create the socket connection
+const socket = io(socketUrl);
+
 socket.on("connect", () => {
   console.log("socket", socket.id, "connected");
 });
@@ -41,6 +61,7 @@ const socketText = socket_text_init(socket);
 const { notificationContainer, notification } = notification_init();
 const bulletCount = bullet_count_init();
 const pingText = ping_init();
+const wallCount = wall_count_init();
 
 // EVENT LISTENERS
 window.addEventListener("keydown", handleKeyDown);
@@ -165,6 +186,8 @@ function handleMouseUp(event) {
 
 function fireBullet() {
   if (playing) {
+    const audio = new Audio('mp3/pop.mp3');
+    audio.play();
     const offsetFactor = 50; // bullet offset from player
     socket.emit("serverUpdateNewBullet", {
       id: Math.random(),
@@ -172,8 +195,8 @@ function fireBullet() {
       parent_username: username,
       x: player.x + Math.cos(player.rotation - Math.PI / 2) * offsetFactor,
       y: player.y + Math.sin(player.rotation - Math.PI / 2) * offsetFactor,
-      width: 35, // width and height really rough estimate of the bullet size. real range 35-45 (idk why)
-      height: 35,
+      width: 20, // width and height really rough estimate of the bullet size. real range 35-45 (idk why)
+      height: 20,
       rotation: player.rotation - Math.PI / 2,
     });
   }
@@ -275,7 +298,7 @@ app.ticker.add(() => {
     dimRectangle, coordinatesText, 
     FPSText, socketText, inventory, 
     healthBar, healthBarValue, notificationContainer, 
-    bulletCount, pingText);
+    bulletCount, pingText, wallCount);
 });
 
 // when spawn is pressed
@@ -326,5 +349,6 @@ UIElements.addChild(coordinatesText);
 UIElements.addChild(FPSText); // removed UIElements since that is added seperately (however all elems inside need to be added to it beforehand)
 UIElements.addChild(bulletCount);
 UIElements.addChild(pingText);
+UIElements.addChild(wallCount);
 app.stage.addChild(notificationContainer);
 app.stage.addChild(dimRectangle);
