@@ -81,9 +81,9 @@ function renderEnemies(enemiesData) { // players data without the current player
     }
 
     const enemySprite = enemySprites[enemyId];
-    enemySprite.x = enemyData.x + 32;
-    enemySprite.y = enemyData.y + 32;
-    enemySprite.rotation = enemyData.rotation;
+    enemySprite.x = enemyData.x + 32 - 4; // -4 is to make sure the hitbox is in the right spot
+    enemySprite.y = enemyData.y + 32 - 4; // +32 is basically the same, except the +32 makes sense because of the sprite. idk why 
+    enemySprite.rotation = enemyData.rotation; // the -4 is needed
 
     if (dev) {
       handleDevEnemyBoundingBox(app, boundingBoxes, enemyData, playerLength); // Fixed typo here
@@ -185,8 +185,8 @@ function fireBullet() {
       x: player.x + Math.cos(player.rotation - Math.PI / 2) * offsetFactor,
       y: player.y + Math.sin(player.rotation - Math.PI / 2) * offsetFactor,
       width: 20,
-      height: 20,
-      rotation: player.rotation - Math.PI / 2,
+      height: 5,
+      rotation: player.rotation - Math.PI / 2 - ((Math.random() - 0.5) * 0.02),
     });
   }
 }
@@ -206,7 +206,7 @@ function shootBulletsContinuously() {
 document.addEventListener("mousedown", handleMouseDown);
 document.addEventListener("mouseup", handleMouseUp);
 
-socket.on("clientUpdateNewBullet", (bulletData) => {
+socket.on("clientUpdateNewBullet", (bulletData) => { // creates a new bullet sprite
   const bulletSprite = Sprite.from(bulletTexture);
   bulletSprite.scale.set(1, 1);
   bulletSprite.anchor.set(0.5, 0.5);
@@ -214,12 +214,11 @@ socket.on("clientUpdateNewBullet", (bulletData) => {
   bulletSprite.y = bulletData.y;
   bulletSprite.width = bulletData.width;
   bulletSprite.height = bulletData.height;
-  bulletSprite.rotation = bulletData.rotation;
   app.stage.addChild(bulletSprite);
   bulletSprites[bulletData.id] = bulletSprite;
 });
 
-socket.on("clientUpdateAllBullets", (bulletsData) => {
+socket.on("clientUpdateAllBullets", (bulletsData) => { // updates all bullet sprites' positions
   const connectedBulletIds = Object.keys(bulletsData);
 
   for (const bulletId in bulletSprites) {
@@ -233,6 +232,7 @@ socket.on("clientUpdateAllBullets", (bulletsData) => {
     const bulletSprite = bulletSprites[bulletId];
     bulletSprite.x = bulletData.x;
     bulletSprite.y = bulletData.y;
+    bulletSprite.rotation = bulletData.rotation;
   }
 
   if (dev) {

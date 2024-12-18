@@ -50,8 +50,8 @@ export async function background_init(app, socket) {
                 if (tile === 4) {
                     let wallData = {
                         id: `wall_${rowIndex}_${colIndex}`,
-                        x: sprite.x,
-                        y: sprite.y,
+                        x: sprite.x + 8,
+                        y: sprite.y + 8,
                         width: sprite.width , // Adjusted to account for scale
                         height: sprite.height  // Adjusted to account for scale
                     };

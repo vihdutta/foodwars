@@ -9,7 +9,7 @@ const io = new Server(server);
 let players = {};
 let bullets = {};
 let walls = {};
-const bulletSpeed = 1;
+const bulletSpeed = 10;
 const playerLength = 70;
 
 // io connections
@@ -72,11 +72,8 @@ io.on("connection", (socket) => {
     // Check collision between bullet and player
     Object.entries(bullets).forEach(([bulletId, bullet]) => {
       if (bullet.parent_id !== socket.id) { // if the bullet isn't fired from the same person check collision
-        if (Math.abs(bullet.x - playerBounds.x) > 5 && Math.abs(bullet.y - playerBounds.y) > 5) {
-          return;
-        }
         if (checkCollision(bullet, playerBounds)) {
-          players[playerData.id].health -= 0.01;
+          players[playerData.id].health -= 10;
           delete bullets[bulletId];
 
           if (players[playerData.id].health <= 0) {
@@ -163,12 +160,6 @@ setInterval(() => {
     io.to(playerSocketId).emit("clientUpdateAllEnemies", enemies);
   }
 }, 10);
-
-setInterval(() => {
-  console.log("players", players);
-  console.log();
-}, 100);
-
 
 // Calculate bullet trajectory (server side) (200 times per second)
 setInterval(() => {

@@ -31,6 +31,7 @@ export function handleDevBulletBoundingBox(app, boundingBoxes, bulletsData, bull
             bulletsData[bulletId].width,
             bulletsData[bulletId].height
         );
+        boundingBox.rotation = bulletsData[bulletId].rotation;
         app.stage.addChild(boundingBox);
         boundingBoxes[bulletId] = {
             box: boundingBox,
@@ -78,8 +79,8 @@ export function handleDevWallBoundingBox(app, boundingBoxes, wallsData) {
             const boundingBox = new Graphics();
             boundingBox.lineStyle({ width: 1, color: 0xff0000, alpha: 1 });
             boundingBox.drawRect(
-                wallsData[wallId].x,
-                wallsData[wallId].y,
+                wallsData[wallId].x - 8,
+                wallsData[wallId].y - 8,
                 wallsData[wallId].width,
                 wallsData[wallId].height
             );
