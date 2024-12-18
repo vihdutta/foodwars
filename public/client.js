@@ -1,9 +1,11 @@
-import { background_init, 
-  menu_dimmer_init, player_init, 
+import {
+  background_init,
+  menu_dimmer_init, player_init,
   coordinates_text_init, fps_text_init,
-   inventory_init, health_bar_init, health_bar_value_init,
-    socket_text_init, notification_init, bullet_count_init, ping_init,
-    wall_count_init } from './graphics.js';
+  inventory_init, health_bar_init, health_bar_value_init,
+  socket_text_init, notification_init, bullet_count_init, ping_init,
+  wall_count_init
+} from './graphics.js';
 import { handleDevBoundingBox, handleDevBulletBoundingBox, handleDevEnemyBoundingBox, handleDevWallBoundingBox } from './dev.js';
 import { returnUsername } from './util.js';
 import { mouse, keyboard, handleMouseMove, handleKeyDown, handleKeyUp } from './movement.js';
@@ -26,29 +28,23 @@ const socketURLs = {
   domain2: "wss://app-112130365883.us-east4.run.app ",
   domain3: "wss://app-dwjio4hwba-uk.a.run.app ",
 };
-
 const domain = window.location.hostname;
 let socketUrl = socketURLs[domain];
-
 if (!socketUrl) {
-  socketUrl = socketURLs.domain1;
+  socketUrl = "ws://localhost:8080";
 }
-
-// Now create the socket connection
 const socket = io(socketUrl);
-
 socket.on("connect", () => {
   console.log("socket", socket.id, "connected");
 });
 
-// init 
+// init app and gui
 const app = new Application({
   width: 500,
   height: 500,
   transparent: false,
   antialias: true,
 });
-
 background_init(app, socket);
 const player = await player_init();
 const dimRectangle = menu_dimmer_init(player);
@@ -286,18 +282,18 @@ function handleWheel(event) {
     // Scrolling down
     camera.scale -= zoomIntensity;
   }
-  camera.scale = Math.max(0.1, Math.min(camera.scale, 1.5)); // Limit the zoom level
+  camera.scale = Math.max(0.8, Math.min(camera.scale, 1.2)); // Limit the zoom level
   app.stage.scale.set(camera.scale);
 }
 
 window.addEventListener("wheel", handleWheel);
 
 app.ticker.add(() => {
-  updateCamera(app, player, 
-    camera, UIElements, 
-    dimRectangle, coordinatesText, 
-    FPSText, socketText, inventory, 
-    healthBar, healthBarValue, notificationContainer, 
+  updateCamera(app, player,
+    camera, UIElements,
+    dimRectangle, coordinatesText,
+    FPSText, socketText, inventory,
+    healthBar, healthBarValue, notificationContainer,
     bulletCount, pingText, wallCount);
 });
 

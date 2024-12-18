@@ -27,8 +27,8 @@ export function updateCamera(app, player, camera, UIElements, dimRectangle, coor
     app.stage.position.y = app.renderer.height / 2 - camera.y * camera.scale;
 
     // Shift UI elements with Camera
-    dimRectangle.x = player.x - app.renderer.width / 2;
-    dimRectangle.y = player.y - app.renderer.height / 2;
+    dimRectangle.x = camera.x - app.renderer.width / 2;
+    dimRectangle.y = camera.y - app.renderer.height / 2;
 
     coordinatesText.x = camera.x + 775;
     coordinatesText.y = camera.y + 420;
@@ -59,5 +59,7 @@ export function updateCamera(app, player, camera, UIElements, dimRectangle, coor
 
     wallCount.x = camera.x - 925;
     wallCount.y = camera.y - 390;
+
+    UIElements.scale.set(1 / camera.scale, 1 / camera.scale);
 }
 

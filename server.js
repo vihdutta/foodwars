@@ -25,23 +25,23 @@ io.on("connection", (socket) => {
   // updates the player
   socket.on("serverUpdateSelf", (playerData) => {
     if (players[playerData.id]) {
-        if (players[playerData.id].health <= 0) {
-            players[playerData.id] = { 
-                ...playerData, 
-                health: 100,
-                x: 0,
-                y: 0
-            };
-            return;
-        } 
-    } else {
-        players[playerData.id] = { 
-            ...playerData, 
-            health: 100,
-            x: 0,
-            y: 0
+      if (players[playerData.id].health <= 0) {
+        players[playerData.id] = {
+          ...playerData,
+          health: 100,
+          x: 0,
+          y: 0
         };
         return;
+      }
+    } else {
+      players[playerData.id] = {
+        ...playerData,
+        health: 100,
+        x: 0,
+        y: 0
+      };
+      return;
     }
 
     let speed = 4;
@@ -50,16 +50,16 @@ io.on("connection", (socket) => {
     }
 
     if (playerData.keyboard.w) {
-        players[playerData.id].y -= speed;
+      players[playerData.id].y -= speed;
     }
     if (playerData.keyboard.a) {
-        players[playerData.id].x -= speed;
+      players[playerData.id].x -= speed;
     }
     if (playerData.keyboard.s) {
-        players[playerData.id].y += speed;
+      players[playerData.id].y += speed;
     }
     if (playerData.keyboard.d) {
-        players[playerData.id].x += speed;
+      players[playerData.id].x += speed;
     }
 
     const playerBounds = {
@@ -76,19 +76,19 @@ io.on("connection", (socket) => {
           return;
         }
         if (checkCollision(bullet, playerBounds)) {
-            players[playerData.id].health -= 10;
-            delete bullets[bulletId];
+          players[playerData.id].health -= 10;
+          delete bullets[bulletId];
 
-            if (players[playerData.id].health <= 0) {
-              console.log(bullet.parent_username + " killed " + playerData.username);
-              io.emit("notification", bullet.parent_username + " killed " + playerData.username);
-              socket.emit("clientUpdateSelf", players[playerData.id]);
-              return;
-            }
+          if (players[playerData.id].health <= 0) {
+            console.log(bullet.parent_username + " killed " + playerData.username);
+            io.emit("notification", bullet.parent_username + " killed " + playerData.username);
+            socket.emit("clientUpdateSelf", players[playerData.id]);
+            return;
+          }
         }
       }
     });
-    
+
     // Check collision between wall and player
     Object.entries(walls).forEach(([wallId, wall]) => {
       if (checkCollision(wall, playerBounds)) {
@@ -114,10 +114,11 @@ io.on("connection", (socket) => {
       });
     });
 
-    players[playerData.id] = { ...playerData, 
-        health: players[playerData.id].health,
-        x: players[playerData.id].x,
-        y: players[playerData.id].y
+    players[playerData.id] = {
+      ...playerData,
+      health: players[playerData.id].health,
+      x: players[playerData.id].x,
+      y: players[playerData.id].y
     };
     socket.emit("clientUpdateSelf", players[playerData.id]);
   });
@@ -147,7 +148,7 @@ io.on("connection", (socket) => {
 });
 
 // Sending x every y seconds
-// Send all player data to clients every 5ms (200 times per second) excluding the player's own data
+// Send all player data to clients every 10ms excluding the player's own data
 setInterval(() => {
   for (const playerSocketId in players) {
     const enemies = { ...players };
@@ -172,10 +173,10 @@ setInterval(() => {
     bullet.y += Math.sin(bullet.rotation) * bulletSpeed;
 
     if (
-      bullet.x > 10000 ||
-      bullet.x < -10000 ||
-      bullet.y > 10000 ||
-      bullet.y < -10000
+      bullet.x > 5000 ||
+      bullet.x < -5000 ||
+      bullet.y > 5000 ||
+      bullet.y < -5000
     ) {
       delete bullets[bulletId];
     }
