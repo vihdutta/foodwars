@@ -136,11 +136,11 @@ socket.on("clientUpdateSelf", (playerData) => {
   }
 });
 
-socket.on("clientUpdateAllWalls", (wallsData) => {
-  for (const wallId in wallsData) {
-    handleDevWallBoundingBox(app, boundingBoxes, wallsData[wallId]);
-  }
-});
+// socket.on("clientUpdateAllWalls", (wallsData) => {
+//   for (const wallId in wallsData) {
+//     handleDevWallBoundingBox(app, boundingBoxes, wallsData[wallId]);
+//   }
+// });
 
 setInterval(() => {
   if (playing) {
@@ -234,6 +234,7 @@ socket.on("clientUpdateAllBullets", (bulletsData) => {
       const bulletSprite = bulletSprites[bulletId];
       app.stage.removeChild(bulletSprite);
       delete bulletSprites[bulletId];
+      continue;
     }
     const bulletData = bulletsData[bulletId];
     const bulletSprite = bulletSprites[bulletData.id];

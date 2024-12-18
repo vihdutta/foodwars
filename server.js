@@ -166,7 +166,6 @@ setInterval(() => {
 
 // Calculate bullet trajectory (server side) (200 times per second)
 setInterval(() => {
-  io.emit("clientUpdateAllBullets", bullets);
   for (const bulletId in bullets) {
     const bullet = bullets[bulletId];
     bullet.x += Math.cos(bullet.rotation) * bulletSpeed;
@@ -181,20 +180,20 @@ setInterval(() => {
       delete bullets[bulletId];
     }
   }
+  io.emit("clientUpdateAllBullets", bullets);
 }, 1);
 
-setInterval(() => {
-  io.emit("clientUpdateAllWalls", walls);
-}, 100);
+// setInterval(() => {
+//   io.emit("clientUpdateAllWalls", walls);
+// }, 100);
 
+// check for disconnected players and remove them
 setInterval(() => {
   for (const playerSocketId in players) {
     if (playerSocketId === "undefined") {
       delete players[playerSocketId];
     }
   }
-  //console.log("Players", players);
-  //console.log(Object.keys(bullets).length);
 }, 1500);
 
 // HELPER FUNCTIONS

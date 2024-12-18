@@ -19,19 +19,11 @@ function createTileMap() {
 }
 
 export async function background_init(app, socket) {
-    // const background = await Assets.load("images/img.jpg");
-    // const backgroundSprite = Sprite.from(background);
-    // backgroundSprite.x = 0;
-    // backgroundSprite.y = 0;
-    // backgroundSprite.scale.set(2, 2);
-
-    app.renderer.background.color = "#23395D"; // Change background color
+    app.renderer.background.color = "#23395D";
     app.renderer.resize(window.innerWidth, window.innerHeight);
     app.renderer.view.style.position = "absolute";
 
-    // app.stage.addChild(backgroundSprite);
     const tileMap = createTileMap();
-      
       Assets.load('images/tileset.png').then((texture) => {
         // Create textures for each tile number
         const tileTextures = {};
@@ -67,7 +59,6 @@ export async function background_init(app, socket) {
           });
         });
       });
-      
 }
 
 export async function player_init() {
