@@ -11,10 +11,10 @@ export function handleDevBoundingBox(app, boundingBoxes, playerData, playerLengt
             playerLength
         );
         app.stage.addChild(boundingBox);
-        boundingBoxes[playerData.id] = boundingBox;
+        boundingBoxes[playerData.id] = {box: boundingBox};
     }
 
-    const boundingBox = boundingBoxes[playerData.id];
+    const boundingBox = boundingBoxes[playerData.id].box;
     boundingBox.x = playerData.x;
     boundingBox.y = playerData.y;
     boundingBox.width = playerLength;

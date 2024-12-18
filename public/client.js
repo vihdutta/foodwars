@@ -186,7 +186,9 @@ function fireBullet() {
       y: player.y + Math.sin(player.rotation - Math.PI / 2) * offsetFactor,
       width: 20,
       height: 5,
-      rotation: player.rotation - Math.PI / 2 - ((Math.random() - 0.5) * 0.02),
+      rotation: player.rotation - Math.PI / 2 - ((Math.random() - 0.5) * 0.05),
+      // player.rotation - pi/2 = rotation
+      // the random part is to make the bullets spread out a bit
     });
   }
 }
@@ -266,20 +268,20 @@ const camera = {
 };
 
 // putting away while fixing other issues
-// function handleWheel(event) {
-//   const zoomIntensity = 0.1;
-//   if (event.deltaY < 0) {
-//     // Scrolling up
-//     camera.scale += zoomIntensity;
-//   } else {
-//     // Scrolling down
-//     camera.scale -= zoomIntensity;
-//   }
-//   camera.scale = Math.max(0.8, Math.min(camera.scale, 1.2)); // Limit the zoom level
-//   app.stage.scale.set(camera.scale);
-// }
+function handleWheel(event) {
+  const zoomIntensity = 0.1;
+  if (event.deltaY < 0) {
+    // Scrolling up
+    camera.scale += zoomIntensity;
+  } else {
+    // Scrolling down
+    camera.scale -= zoomIntensity;
+  }
+  camera.scale = Math.max(0.2, Math.min(camera.scale, 1.2)); // Limit the zoom level
+  app.stage.scale.set(camera.scale);
+}
 
-// window.addEventListener("wheel", handleWheel);
+window.addEventListener("wheel", handleWheel);
 
 app.ticker.add(() => {
   updateCamera(app, player,
