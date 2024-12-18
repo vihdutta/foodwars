@@ -19,6 +19,7 @@ function createTileMap() {
 }
 
 export async function background_init(app, socket) {
+    let walls = {};
     app.renderer.background.color = "#23395D";
     app.renderer.resize(window.innerWidth, window.innerHeight);
     app.renderer.view.style.position = "absolute";
@@ -47,18 +48,21 @@ export async function background_init(app, socket) {
 
                 // Add walls to the walls data structure
                 if (tile === 4) {
-                    socket.emit('addWall', {
+                    let wallData = {
                         id: `wall_${rowIndex}_${colIndex}`,
-                        x: sprite.x + 32,
-                        y: sprite.y + 32,
+                        x: sprite.x,
+                        y: sprite.y,
                         width: sprite.width , // Adjusted to account for scale
                         height: sprite.height  // Adjusted to account for scale
-                    });
+                    };
+                    socket.emit('addWall', wallData);
+                    walls[wallData.id] = wallData;
                 }
             }
           });
         });
       });
+    return walls;
 }
 
 export async function player_init() {

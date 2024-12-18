@@ -9,7 +9,7 @@ const io = new Server(server);
 let players = {};
 let bullets = {};
 let walls = {};
-const bulletSpeed = 5;
+const bulletSpeed = 1;
 const playerLength = 70;
 
 // io connections
@@ -44,9 +44,9 @@ io.on("connection", (socket) => {
       return;
     }
 
-    let speed = 4;
+    let speed = 3; // player speed
     if (playerData.keyboard.shift) {
-      speed += 2;
+      speed += 1.5;
     }
 
     if (playerData.keyboard.w) {
@@ -76,7 +76,7 @@ io.on("connection", (socket) => {
           return;
         }
         if (checkCollision(bullet, playerBounds)) {
-          players[playerData.id].health -= 10;
+          players[playerData.id].health -= 0.01;
           delete bullets[bulletId];
 
           if (players[playerData.id].health <= 0) {
@@ -123,7 +123,7 @@ io.on("connection", (socket) => {
     socket.emit("clientUpdateSelf", players[playerData.id]);
   });
 
-  socket.on("serverUpdateNewBullet", (bulletData) => {
+  socket.on("serverUpdateNewBullet", (bullet) => {
     if (
       players[socket.id] &&
       players[socket.id].hasOwnProperty("health") &&
@@ -132,8 +132,8 @@ io.on("connection", (socket) => {
       return;
     }
 
-    bullets[bulletData.id] = bulletData;
-    io.emit("clientUpdateNewBullet", bulletData);
+    bullets[bullet.id] = bullet;
+    io.emit("clientUpdateNewBullet", bullet);
   });
 
   socket.on('addWall', (wallData) => {
@@ -163,6 +163,12 @@ setInterval(() => {
     io.to(playerSocketId).emit("clientUpdateAllEnemies", enemies);
   }
 }, 10);
+
+setInterval(() => {
+  console.log("players", players);
+  console.log();
+}, 100);
+
 
 // Calculate bullet trajectory (server side) (200 times per second)
 setInterval(() => {

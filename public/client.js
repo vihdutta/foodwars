@@ -21,6 +21,7 @@ let username = " ";
 let UIElements = new PIXI.Container();
 let lastPingSentTime = 0;
 const playerLength = 70;
+let boundingBoxes = {};
 
 // setup socket
 const socketURLs = {
@@ -45,7 +46,7 @@ const app = new Application({
   transparent: false,
   antialias: true,
 });
-background_init(app, socket);
+let wallsData = await background_init(app, socket);
 const player = await player_init();
 const dimRectangle = menu_dimmer_init(player);
 const coordinatesText = coordinates_text_init(player);
@@ -67,27 +68,25 @@ window.addEventListener("mousedown", handleMouseDown);
 
 // PLAYERS
 const enemySprites = {}; // Stores the other player sprites
-
 const enemyTexture = await Assets.load("images/enemies.png");
-function renderEnemies(enemiesData) {
+function renderEnemies(enemiesData) { // players data without the current player
   for (const enemyId in enemiesData) {
     const enemyData = enemiesData[enemyId];
-    if (!enemySprites[enemyData.id] && enemiesData[enemyId].health > 0) {
-      // Create a new PIXI sprite for the player
+    if (!enemySprites[enemyId] && enemiesData[enemyId].health > 0) {
       const enemySprite = Sprite.from(enemyTexture);
       enemySprite.scale.set(2, 2);
       enemySprite.anchor.set(0.5, 0.5);
       app.stage.addChild(enemySprite);
-      enemySprites[enemyData.id] = enemySprite;
+      enemySprites[enemyId] = enemySprite;
     }
 
-    const enemySprite = enemySprites[enemyData.id];
-    enemySprite.x = enemyData.x;
-    enemySprite.y = enemyData.y;
+    const enemySprite = enemySprites[enemyId];
+    enemySprite.x = enemyData.x + 32;
+    enemySprite.y = enemyData.y + 32;
     enemySprite.rotation = enemyData.rotation;
 
     if (dev) {
-      handleDevEnemyBoundingBox(app, boundingBoxes, enemyData, playerLength);
+      handleDevEnemyBoundingBox(app, boundingBoxes, enemyData, playerLength); // Fixed typo here
     }
   }
 }
@@ -126,8 +125,8 @@ socket.on("clientUpdateSelf", (playerData) => {
         element.style.display = "block";
       }
     }
-    player.x = playerData.x;
-    player.y = playerData.y;
+    player.x = playerData.x + 32;
+    player.y = playerData.y + 32;
     player.rotation = playerData.rotation;
 
     if (dev) {
@@ -135,12 +134,6 @@ socket.on("clientUpdateSelf", (playerData) => {
     }
   }
 });
-
-// socket.on("clientUpdateAllWalls", (wallsData) => {
-//   for (const wallId in wallsData) {
-//     handleDevWallBoundingBox(app, boundingBoxes, wallsData[wallId]);
-//   }
-// });
 
 setInterval(() => {
   if (playing) {
@@ -184,14 +177,14 @@ function fireBullet() {
   if (playing) {
     const audio = new Audio('mp3/pop.mp3');
     audio.play();
-    const offsetFactor = 50; // bullet offset from player
+    const offsetFactor = 30; // bullet offset from player
     socket.emit("serverUpdateNewBullet", {
-      id: Math.random(),
+      id: crypto.randomUUID(),
       parent_id: socket.id,
       parent_username: username,
       x: player.x + Math.cos(player.rotation - Math.PI / 2) * offsetFactor,
       y: player.y + Math.sin(player.rotation - Math.PI / 2) * offsetFactor,
-      width: 20, // width and height really rough estimate of the bullet size. real range 35-45 (idk why)
+      width: 20,
       height: 20,
       rotation: player.rotation - Math.PI / 2,
     });
@@ -237,7 +230,7 @@ socket.on("clientUpdateAllBullets", (bulletsData) => {
       continue;
     }
     const bulletData = bulletsData[bulletId];
-    const bulletSprite = bulletSprites[bulletData.id];
+    const bulletSprite = bulletSprites[bulletId];
     bulletSprite.x = bulletData.x;
     bulletSprite.y = bulletData.y;
   }
@@ -250,8 +243,6 @@ socket.on("clientUpdateAllBullets", (bulletsData) => {
 });
 
 // bounding boxes
-let boundingBoxes = {};
-
 setInterval(() => {
   Object.keys(boundingBoxes).forEach((id) => {
     boundingBoxes[id].timer -= 0.01;
@@ -274,20 +265,21 @@ const camera = {
   scale: 1,
 };
 
-function handleWheel(event) {
-  const zoomIntensity = 0.1;
-  if (event.deltaY < 0) {
-    // Scrolling up
-    camera.scale += zoomIntensity;
-  } else {
-    // Scrolling down
-    camera.scale -= zoomIntensity;
-  }
-  camera.scale = Math.max(0.8, Math.min(camera.scale, 1.2)); // Limit the zoom level
-  app.stage.scale.set(camera.scale);
-}
+// putting away while fixing other issues
+// function handleWheel(event) {
+//   const zoomIntensity = 0.1;
+//   if (event.deltaY < 0) {
+//     // Scrolling up
+//     camera.scale += zoomIntensity;
+//   } else {
+//     // Scrolling down
+//     camera.scale -= zoomIntensity;
+//   }
+//   camera.scale = Math.max(0.8, Math.min(camera.scale, 1.2)); // Limit the zoom level
+//   app.stage.scale.set(camera.scale);
+// }
 
-window.addEventListener("wheel", handleWheel);
+// window.addEventListener("wheel", handleWheel);
 
 app.ticker.add(() => {
   updateCamera(app, player,
@@ -316,6 +308,16 @@ button.addEventListener("click", function () {
 // dev
 document.addEventListener("keydown", (event) => {
   if (event.key === "`") {
+    if (dev) {
+      console.log("Removing bounding boxes");
+      console.log(boundingBoxes);
+      Object.keys(boundingBoxes).forEach((id) => {
+        app.stage.removeChild(boundingBoxes[id].box);
+        delete boundingBoxes[id];
+      });
+    } else {
+      handleDevWallBoundingBox(app, boundingBoxes, wallsData);
+    }
     dev = !dev;
     console.log("Variable toggled:", dev);
   }
