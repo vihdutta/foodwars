@@ -49,25 +49,47 @@ io.on("connection", (socket) => {
       speed += 1.5;
     }
 
-    if (playerData.keyboard.w) {
-      players[playerData.id].y -= speed;
-    }
-    if (playerData.keyboard.a) {
-      players[playerData.id].x -= speed;
-    }
-    if (playerData.keyboard.s) {
-      players[playerData.id].y += speed;
-    }
-    if (playerData.keyboard.d) {
-      players[playerData.id].x += speed;
-    }
-
+    const player = players[playerData.id];
     const playerBounds = {
-      x: players[playerData.id].x,
-      y: players[playerData.id].y,
+      x: player.x,
+      y: player.y,
       width: playerLength,
       height: playerLength,
     };
+
+    let canMoveUp = true;
+    let canMoveLeft = true;
+    let canMoveDown = true;
+    let canMoveRight = true;
+
+    // Check potential collisions with walls before moving
+    Object.entries(walls).forEach(([wallId, wall]) => {
+      if (checkCollision(wall, { ...playerBounds, y: playerBounds.y - speed })) {
+        canMoveUp = false;
+      }
+      if (checkCollision(wall, { ...playerBounds, x: playerBounds.x - speed })) {
+        canMoveLeft = false;
+      }
+      if (checkCollision(wall, { ...playerBounds, y: playerBounds.y + speed })) {
+        canMoveDown = false;
+      }
+      if (checkCollision(wall, { ...playerBounds, x: playerBounds.x + speed })) {
+        canMoveRight = false;
+      }
+    });
+
+    if (playerData.keyboard.w && canMoveUp) {
+      player.y -= speed;
+    }
+    if (playerData.keyboard.a && canMoveLeft) {
+      player.x -= speed;
+    }
+    if (playerData.keyboard.s && canMoveDown) {
+      player.y += speed;
+    }
+    if (playerData.keyboard.d && canMoveRight) {
+      player.x += speed;
+    }
 
     // Check collision between bullet and player
     Object.entries(bullets).forEach(([bulletId, bullet]) => {
@@ -86,24 +108,8 @@ io.on("connection", (socket) => {
       }
     });
 
-    // Check collision between wall and player
+    // Check collision between wall and bullet
     Object.entries(walls).forEach(([wallId, wall]) => {
-      if (checkCollision(wall, playerBounds)) {
-        if (playerData.keyboard.w) {
-          players[playerData.id].y += speed;
-        }
-        if (playerData.keyboard.a) {
-          players[playerData.id].x += speed;
-        }
-        if (playerData.keyboard.s) {
-          players[playerData.id].y -= speed;
-        }
-        if (playerData.keyboard.d) {
-          players[playerData.id].x -= speed;
-        }
-      }
-
-      // Check collision between wall and bullet
       Object.entries(bullets).forEach(([bulletId, bullet]) => {
         if (checkCollision(wall, bullet)) {
           delete bullets[bulletId];
@@ -114,8 +120,8 @@ io.on("connection", (socket) => {
     players[playerData.id] = {
       ...playerData,
       health: players[playerData.id].health,
-      x: players[playerData.id].x,
-      y: players[playerData.id].y
+      x: player.x,
+      y: player.y
     };
     socket.emit("clientUpdateSelf", players[playerData.id]);
   });
@@ -179,10 +185,6 @@ setInterval(() => {
   }
   io.emit("clientUpdateAllBullets", bullets);
 }, 1);
-
-// setInterval(() => {
-//   io.emit("clientUpdateAllWalls", walls);
-// }, 100);
 
 // check for disconnected players and remove them
 setInterval(() => {

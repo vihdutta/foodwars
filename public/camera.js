@@ -53,7 +53,7 @@ export function updateCamera(app, player, camera, UIElements, dimRectangle, coor
 
     healthBarValue.x = camera.x - 850 / camera.scale;
     healthBarValue.y = camera.y + 360 / camera.scale;
-    healthBarValue.scale.set(1 / camera.scale, 1 / camera.scale);
+    //healthBarValue.scale.set(1 / camera.scale, 1 / camera.scale);
 
     notificationContainer.x = camera.x + 450 / camera.scale;
     notificationContainer.y = camera.y - 400 / camera.scale;
