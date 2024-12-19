@@ -27,39 +27,48 @@ export function updateCamera(app, player, camera, UIElements, dimRectangle, coor
     app.stage.position.y = app.renderer.height / 2 - camera.y * camera.scale;
 
     // Shift UI elements with Camera
-    dimRectangle.x = camera.x - app.renderer.width / 2;
-    dimRectangle.y = camera.y - app.renderer.height / 2;
+    dimRectangle.x = camera.x - (app.renderer.width / 2) / camera.scale;
+    dimRectangle.y = camera.y - (app.renderer.height / 2) / camera.scale;
+    dimRectangle.scale.set(1 / camera.scale, 1 / camera.scale);
 
-    coordinatesText.x = camera.x + 775;
-    coordinatesText.y = camera.y + 420;
+    coordinatesText.x = camera.x + 720 / camera.scale;
+    coordinatesText.y = camera.y + 350 / camera.scale;
+    coordinatesText.scale.set(1 / camera.scale, 1 / camera.scale);
 
-    FPSText.x = camera.x - 925;
-    FPSText.y = camera.y - 450;
+    FPSText.x = camera.x - 860 / camera.scale;
+    FPSText.y = camera.y - 400 / camera.scale;
+    FPSText.scale.set(1 / camera.scale, 1 / camera.scale);
 
-    socketText.x = camera.x + 765;
-    socketText.y = camera.y + 460;
+    socketText.x = camera.x + 765 / camera.scale;
+    socketText.y = camera.y + 460 / camera.scale;
+    socketText.scale.set(1 / camera.scale, 1 / camera.scale);
 
-    inventory.x = camera.x - 250;
-    inventory.y = camera.y + 400;
+    inventory.x = camera.x - 250 / camera.scale;
+    inventory.y = camera.y + 350 / camera.scale;
+    inventory.scale.set(1 / camera.scale, 1 / camera.scale);
 
-    healthBar.x = camera.x - 925;
-    healthBar.y = camera.y + 420;
+    healthBar.x = camera.x - 850 / camera.scale;
+    healthBar.y = camera.y + 360 / camera.scale;
+    healthBar.scale.set(1 / camera.scale, 1 / camera.scale);
 
-    healthBarValue.x = camera.x - 925;
-    healthBarValue.y = camera.y + 420;
+    healthBarValue.x = camera.x - 850 / camera.scale;
+    healthBarValue.y = camera.y + 360 / camera.scale;
+    healthBarValue.scale.set(1 / camera.scale, 1 / camera.scale);
 
-    notificationContainer.x = camera.x + 550;
-    notificationContainer.y = camera.y - 420;
+    notificationContainer.x = camera.x + 450 / camera.scale;
+    notificationContainer.y = camera.y - 400 / camera.scale;
+    notificationContainer.scale.set(1 / camera.scale, 1 / camera.scale);
 
-    bulletCount.x = camera.x - 925;
-    bulletCount.y = camera.y - 420;
+    bulletCount.x = camera.x - 860 / camera.scale;
+    bulletCount.y = camera.y - 370 / camera.scale;
+    bulletCount.scale.set(1 / camera.scale, 1 / camera.scale);
 
-    pingText.x = camera.x - 925;
-    pingText.y = camera.y - 360;
+    pingText.x = camera.x - 860 / camera.scale;
+    pingText.y = camera.y - 340 / camera.scale;
+    pingText.scale.set(1 / camera.scale, 1 / camera.scale);
 
-    wallCount.x = camera.x - 925;
-    wallCount.y = camera.y - 390;
-
-    UIElements.scale.set(1 / camera.scale, 1 / camera.scale);
+    wallCount.x = camera.x - 860 / camera.scale;
+    wallCount.y = camera.y - 310 / camera.scale;
+    wallCount.scale.set(1 / camera.scale, 1 / camera.scale);
 }
 
