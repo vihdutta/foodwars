@@ -9,6 +9,7 @@ const io = new Server(server);
 let players = {};
 let bullets = {};
 let walls = {};
+const spawnPoints = [[250, 950], [2650, 950]];
 const bulletSpeed = 10;
 const playerLength = 70;
 
@@ -53,20 +54,22 @@ io.on("connection", (socket) => {
     const startTime = startTiming();
     if (players[playerData.id]) {
       if (players[playerData.id].health <= 0) {
+        let spawnPoint = bestSpawnPoint();
         players[playerData.id] = {
           ...playerData,
           health: 100,
-          x: 0,
-          y: 0
+          x: spawnPoint[0],
+          y: spawnPoint[1]
         };
         return;
       }
     } else {
+      let spawnPoint = bestSpawnPoint();
       players[playerData.id] = {
         ...playerData,
         health: 100,
-        x: 0,
-        y: 0
+        x: spawnPoint[0],
+        y: spawnPoint[1]
       };
       return;
     }
@@ -201,6 +204,9 @@ setInterval(() => {
 // Calculate bullet trajectory (server side) (200 times per second)
 setInterval(() => {
   const startTime = startTiming();
+  if (Object.keys(bullets).length === 0) {
+    return;
+  }
   for (const bulletId in bullets) {
     const bullet = bullets[bulletId];
     bullet.x += Math.cos(bullet.rotation) * bulletSpeed;
@@ -220,7 +226,7 @@ setInterval(() => {
   const elapsed = endTiming(startTime);
   timings.updateBullets.count++;
   timings.updateBullets.total += elapsed;
-}, 1);
+}, 2);
 
 // check for disconnected players and remove them
 setInterval(() => {
@@ -241,6 +247,35 @@ function checkCollision(aBox, bBox) {
   );
 }
 
+// spawn player based on the spawn points farthest from other players
+function bestSpawnPoint() {
+  if (Object.keys(players).length === 0) {
+    return spawnPoints[Math.floor(Math.random() * spawnPoints.length)];
+  }
+
+  let maxDistance = 0;
+  let bestSpawnPoint = spawnPoints[0];
+
+  spawnPoints.forEach((spawnPoint) => {
+    let minDistance = Infinity;
+
+    Object.values(players).forEach((player) => {
+      const distance = Math.sqrt(
+        Math.pow(player.x - spawnPoint[0], 2) + Math.pow(player.y - spawnPoint[1], 2)
+      );
+      if (distance < minDistance) {
+        minDistance = distance;
+      }
+    });
+
+    if (minDistance > maxDistance) {
+      maxDistance = minDistance;
+      bestSpawnPoint = spawnPoint;
+    }
+  });
+
+  return bestSpawnPoint;
+}
 // final setup
 const PORT = process.env.PORT || 8080;
 app.use(express.static("public"));

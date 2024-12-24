@@ -4,16 +4,21 @@ const Graphics = PIXI.Graphics;
 
 function createTileMap() {
     return [
-        [48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48],
-        [48,  1,  1,  1,  1,  1,  1,  1,  1,  1,  2,  2,  2,  2,  2,  2,  2,  2,  2, 48],
-        [48,  1,  3,  4,  4,  4,  4,  4,  4,  4,  4,  5,  6,  6,  6,  6,  6,  6,  2, 48],
-        [48,  1,  3,  7,  8,  8,  8,  8,  8,  9, 10, 11, 12, 12, 12, 12, 12, 13,  2, 48],
-        [48,  1,  3,  7, 14, 15, 15, 15, 16, 17, 18, 19, 20, 20, 20, 20, 20, 21,  2, 48],
-        [48,  1,  3,  7, 14, 22, 23, 24, 25, 26, 27, 28, 29, 30, 30, 30, 30, 31,  2, 48],
-        [48,  1,  3,  7, 14, 22, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 41, 42,  2, 48],
-        [48,  1,  3,  7, 14, 22, 43, 44, 45, 46, 47, 48, 48, 48, 49, 50, 51, 52,  2, 48],
-        [48,  1,  3,  7, 14, 22, 43, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63,  2, 48],
-        [48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48],
+        [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2],
+        [2, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 2],
+        [2, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 2],
+        [2, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 2, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 2],
+        [2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2],
+        [2, 1, 1, 2, 1, 1, 1, 1, 1, 2, 1, 2, 1, 2, 1, 1, 1, 1, 1, 2, 1, 1, 2],
+        [2, 1, 1, 2, 1, 1, 1, 1, 1, 2, 1, 1, 1, 2, 1, 1, 1, 1, 1, 2, 1, 1, 2],
+        [2, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 2],
+        [2, 1, 1, 2, 1, 1, 1, 1, 1, 2, 1, 1, 1, 2, 1, 1, 1, 1, 1, 2, 1, 1, 2],
+        [2, 1, 1, 2, 1, 1, 1, 1, 1, 2, 1, 2, 1, 2, 1, 1, 1, 1, 1, 2, 1, 1, 2],
+        [2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2],
+        [2, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 2, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 2],
+        [2, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 2],
+        [2, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 2],
+        [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2]
     ];
 }
 
@@ -25,19 +30,19 @@ export async function background_init(app, socket) {
     app.renderer.view.style.position = "absolute";
 
     const tileMap = createTileMap();
-      Assets.load('images/tileset.png').then((texture) => {
+      Assets.load('images/simple_textures.png').then((texture) => {
         // Create textures for each tile number
         const tileTextures = {};
-        for (let i = 0; i < 5; i++) { // 5 rows
-          for (let j = 1; j <= 11; j++) { // 11 columns
+        for (let i = 0; i < 1; i++) { // 2 rows
+          for (let j = 1; j <= 2; j++) { // 1 columns
             const tileX = (j - 1) * 64;
             const tileY = i * 64;
-            const tileIndex = i * 11 + j;
+            const tileIndex = i * 1 + j; // the number 1 is the number of columns
             tileTextures[tileIndex] = new PIXI.Texture(texture, new PIXI.Rectangle(tileX, tileY, 64, 64));
           }
         }
 
-        const scale = 3; // scales the sprites
+        const scale = 2; // scales the sprites
         tileMap.forEach((row, rowIndex) => {
           row.forEach((tile, colIndex) => {
             const sprite = new PIXI.Sprite(tileTextures[tile]);
@@ -48,7 +53,7 @@ export async function background_init(app, socket) {
         
 
                 app.stage.addChild(sprite);
-                if (tile === 4) { // tiles with collision box
+                if (tile === 2) { // tiles with collision box
                     let wallData = {
                         id: `wall_${rowIndex}_${colIndex}`,
                         x: sprite.x + 8,
@@ -94,12 +99,15 @@ export function coordinates_text_init(player) {
         fontFamily: "Arial",
         fontSize: 30,
         fill: "ffffff",
+        stroke: "000000",
+        strokeThickness: 4
     });
     coordinatesText.x = 0;
     coordinatesText.y = 0;
 
     setInterval(() => {
-        coordinatesText.text = "(" + Math.round(player.x / 50) + ", " + Math.round(player.y / 50) + ")";
+        //coordinatesText.text = "(" + Math.round(player.x / 50) + ", " + Math.round(player.y / 50) + ")";
+        coordinatesText.text = "(" + Math.round(player.x) + ", " + Math.round(player.y) + ")";
     }, 100);
 
     return coordinatesText;
@@ -110,6 +118,8 @@ export function fps_text_init(app, player) {
         fontFamily: "Arial",
         fontSize: 30,
         fill: "ffffff",
+        stroke: "000000",
+        strokeThickness: 4
     });
     FPSText.x = 0;
     FPSText.y = 0;
@@ -158,6 +168,8 @@ export function socket_text_init(socket) {
         fontFamily: "Arial",
         fontSize: 10,
         fill: "ffffff",
+        stroke: "000000",
+        strokeThickness: 4
     });
     socketText.x = 0;
     socketText.y = 0;
@@ -181,6 +193,8 @@ export function notification_init() {
             fontSize: 21,
             fill: "white",
             align: "center",
+            stroke: "000000",
+            strokeThickness: 4
         });
         notification.x = 0;
         notification.y = notificationOffsetY;
@@ -210,6 +224,8 @@ export function bullet_count_init() {
         fontFamily: "Arial",
         fontSize: 30,
         fill: "ffffff",
+        stroke: "000000",
+        strokeThickness: 4
     });
     bulletCount.x = 0;
     bulletCount.y = 0;
@@ -222,6 +238,8 @@ export function ping_init() {
         fontFamily: "Arial",
         fontSize: 30,
         fill: "ffffff",
+        stroke: "000000",
+        strokeThickness: 4
     });
     pingText.x = 0;
     pingText.y = 0;
@@ -234,6 +252,8 @@ export function wall_count_init() {
         fontFamily: "Arial",
         fontSize: 30,
         fill: "ffffff",
+        stroke: "000000",
+        strokeThickness: 4
     });
     wallCount.x = 0;
     wallCount.y = 0;

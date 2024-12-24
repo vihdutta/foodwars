@@ -31,7 +31,7 @@ export function updateCamera(app, player, camera, UIElements, dimRectangle, coor
     dimRectangle.y = camera.y - (app.renderer.height / 2) / camera.scale;
     dimRectangle.scale.set(1 / camera.scale, 1 / camera.scale);
 
-    coordinatesText.x = camera.x + 720 / camera.scale;
+    coordinatesText.x = camera.x + 690 / camera.scale;
     coordinatesText.y = camera.y + 350 / camera.scale;
     coordinatesText.scale.set(1 / camera.scale, 1 / camera.scale);
 
@@ -39,8 +39,8 @@ export function updateCamera(app, player, camera, UIElements, dimRectangle, coor
     FPSText.y = camera.y - 400 / camera.scale;
     FPSText.scale.set(1 / camera.scale, 1 / camera.scale);
 
-    socketText.x = camera.x + 765 / camera.scale;
-    socketText.y = camera.y + 460 / camera.scale;
+    socketText.x = camera.x + 670 / camera.scale;
+    socketText.y = camera.y + 400 / camera.scale;
     socketText.scale.set(1 / camera.scale, 1 / camera.scale);
 
     inventory.x = camera.x - 250 / camera.scale;

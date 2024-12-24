@@ -153,11 +153,6 @@ setInterval(() => {
 // BULLETS
 let bulletSprites = {};
 
-setInterval(() => {
-  coordinatesText.text = "(" + Math.round(player.x / 50) + ", " + Math.round(player.y / 50) + ")";
-  bulletCount.text = "Bullets: " + Object.keys(bulletSprites).length;
-}, 100);
-
 const bulletTexture = await Assets.load("images/bullet.png");
 
 let isMouseDown = false;
@@ -201,7 +196,7 @@ function shootBulletsContinuously() {
       if (isMouseDown) {
         fireBullet();
       }
-    }, 30); // rate of fire
+    }, 100); // rate of fire. tie rate of fire to bloom in future?
   }
 }
 
