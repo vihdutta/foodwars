@@ -9,7 +9,7 @@ const io = new Server(server);
 let players = {};
 let bullets = {};
 let walls = {};
-const spawnPoints = [[250, 950], [2650, 950]];
+const spawnPoints = [[250, 2100], [2650, 2100], [1450, 2100], [1450, 250], [1450, 3950]];
 const bulletSpeed = 10;
 const playerLength = 70;
 
