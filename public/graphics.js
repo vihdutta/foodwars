@@ -19,8 +19,8 @@ export async function background_init(app, socket) {
         const tileTextures = {};
         for (let j = 1; j <= 4; j++) { // 4 columns
             const tileX = (j - 1) * 64;
-            tileTextures[j] = new PIXI.Texture(texture, new PIXI.Rectangle(tileX, 0, 64, 64));
-        }
+            tileTextures[j] = new PIXI.Texture(texture, new PIXI.Rectangle(tileX, 0, 64, 63.7));
+        } // weird spacing issue between columns, so made it consistent by adding same spacing offset between rows
 
         const scale = 2; // scales the sprites
         tileMap.forEach((row, rowIndex) => {
@@ -195,7 +195,7 @@ export function notification_init() {
             notificationContainer.children.forEach((child) => {
                 child.y -= 40;
             });
-        }, 3000);
+        }, 5000);
     }
 
     return { notificationContainer, notification };
