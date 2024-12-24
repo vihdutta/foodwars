@@ -12,6 +12,32 @@ let walls = {};
 const bulletSpeed = 10;
 const playerLength = 70;
 
+let timings = {
+  updatePlayer: { count: 0, total: 0 },
+  updateBullets: { count: 0, total: 0 },
+};
+
+function startTiming() {
+  return process.hrtime();
+}
+
+function endTiming(startTime) {
+  const diff = process.hrtime(startTime);
+  return diff[0] * 1e3 + diff[1] / 1e6; // convert to milliseconds
+}
+
+setInterval(() => {
+  console.log("Performance metrics (last second):");
+  console.log(`Player updates: ${timings.updatePlayer.count} times, average time: ${timings.updatePlayer.count ? (timings.updatePlayer.total / timings.updatePlayer.count).toFixed(2) : 0} ms`);
+  console.log(`Bullet updates: ${timings.updateBullets.count} times, average time: ${timings.updateBullets.count ? (timings.updateBullets.total / timings.updateBullets.count).toFixed(2) : 0} ms`);
+
+  // Reset counters
+  timings.updatePlayer.count = 0;
+  timings.updatePlayer.total = 0;
+  timings.updateBullets.count = 0;
+  timings.updateBullets.total = 0;
+}, 1000);
+
 // io connections
 io.on("connection", (socket) => {
   console.log("SERVER: socket", socket.id, "connected");
@@ -24,6 +50,7 @@ io.on("connection", (socket) => {
 
   // updates the player
   socket.on("serverUpdateSelf", (playerData) => {
+    const startTime = startTiming();
     if (players[playerData.id]) {
       if (players[playerData.id].health <= 0) {
         players[playerData.id] = {
@@ -124,6 +151,10 @@ io.on("connection", (socket) => {
       y: player.y
     };
     socket.emit("clientUpdateSelf", players[playerData.id]);
+
+    const elapsed = endTiming(startTime);
+    timings.updatePlayer.count++;
+    timings.updatePlayer.total += elapsed;
   });
 
   socket.on("serverUpdateNewBullet", (bullet) => {
@@ -169,6 +200,7 @@ setInterval(() => {
 
 // Calculate bullet trajectory (server side) (200 times per second)
 setInterval(() => {
+  const startTime = startTiming();
   for (const bulletId in bullets) {
     const bullet = bullets[bulletId];
     bullet.x += Math.cos(bullet.rotation) * bulletSpeed;
@@ -184,6 +216,10 @@ setInterval(() => {
     }
   }
   io.emit("clientUpdateAllBullets", bullets);
+
+  const elapsed = endTiming(startTime);
+  timings.updateBullets.count++;
+  timings.updateBullets.total += elapsed;
 }, 1);
 
 // check for disconnected players and remove them

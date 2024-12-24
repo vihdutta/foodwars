@@ -45,6 +45,7 @@ const app = new Application({
   height: 500,
   transparent: false,
   antialias: true,
+  resizeTo: window,
 });
 let wallsData = await background_init(app, socket);
 const player = await player_init();
@@ -200,7 +201,7 @@ function shootBulletsContinuously() {
       if (isMouseDown) {
         fireBullet();
       }
-    }, 100); // rate of fire
+    }, 30); // rate of fire
   }
 }
 

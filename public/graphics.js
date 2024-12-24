@@ -4,19 +4,19 @@ const Graphics = PIXI.Graphics;
 
 function createTileMap() {
     return [
-        [1, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4],
-        [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 4],
-        [4, 2, 4, 4, 4, 2, 4, 4, 4, 4, 2, 4],
-        [4, 2, 4, 2, 2, 2, 2, 2, 2, 4, 2, 4],
-        [4, 2, 4, 2, 4, 4, 4, 4, 2, 4, 2, 4],
-        [4, 2, 4, 2, 4, 2, 2, 4, 2, 4, 2, 4],
-        [4, 2, 4, 2, 4, 2, 4, 4, 2, 4, 2, 4],
-        [4, 2, 4, 2, 4, 2, 2, 2, 2, 4, 2, 4],
-        [4, 2, 4, 2, 4, 4, 4, 4, 4, 4, 2, 4],
-        [4, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 4],
-        [4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4]
+        [48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48],
+        [48,  1,  1,  1,  1,  1,  1,  1,  1,  1,  2,  2,  2,  2,  2,  2,  2,  2,  2, 48],
+        [48,  1,  3,  4,  4,  4,  4,  4,  4,  4,  4,  5,  6,  6,  6,  6,  6,  6,  2, 48],
+        [48,  1,  3,  7,  8,  8,  8,  8,  8,  9, 10, 11, 12, 12, 12, 12, 12, 13,  2, 48],
+        [48,  1,  3,  7, 14, 15, 15, 15, 16, 17, 18, 19, 20, 20, 20, 20, 20, 21,  2, 48],
+        [48,  1,  3,  7, 14, 22, 23, 24, 25, 26, 27, 28, 29, 30, 30, 30, 30, 31,  2, 48],
+        [48,  1,  3,  7, 14, 22, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 41, 42,  2, 48],
+        [48,  1,  3,  7, 14, 22, 43, 44, 45, 46, 47, 48, 48, 48, 49, 50, 51, 52,  2, 48],
+        [48,  1,  3,  7, 14, 22, 43, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63,  2, 48],
+        [48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48],
     ];
 }
+
 
 export async function background_init(app, socket) {
     let walls = {};
@@ -28,26 +28,27 @@ export async function background_init(app, socket) {
       Assets.load('images/tileset.png').then((texture) => {
         // Create textures for each tile number
         const tileTextures = {};
-        for (let i = 1; i <= 4; i++) { // Adjusted range to include all tiles
-          const tileX = (i - 1) * 16; // Tile width is 16 pixels
-          tileTextures[i] = new PIXI.Texture(texture, new PIXI.Rectangle(tileX, 0, 16, 16)); // Updated dimensions
+        for (let i = 0; i < 5; i++) { // 5 rows
+          for (let j = 1; j <= 11; j++) { // 11 columns
+            const tileX = (j - 1) * 64;
+            const tileY = i * 64;
+            const tileIndex = i * 11 + j;
+            tileTextures[tileIndex] = new PIXI.Texture(texture, new PIXI.Rectangle(tileX, tileY, 64, 64));
+          }
         }
 
+        const scale = 3; // scales the sprites
         tileMap.forEach((row, rowIndex) => {
           row.forEach((tile, colIndex) => {
-                if (tile > 0) { // Changed condition
-                const sprite = new PIXI.Sprite(tileTextures[tile]); // Use texture based on tile number
+            const sprite = new PIXI.Sprite(tileTextures[tile]);
+            // position the sprite
+            sprite.x = colIndex * 64 * scale;
+            sprite.y = rowIndex * 64 * scale;
+            sprite.scale.set(scale, scale);
         
-                // Position the sprite based on the map layout
-                sprite.x = colIndex * 128; // Horizontal position
-                sprite.y = rowIndex * 128; // Vertical position
-                sprite.scale.set(8, 8); // Adjusted scale as needed
-        
-                // Add the sprite to the stage
-                app.stage.addChild(sprite);
 
-                // Add walls to the walls data structure
-                if (tile === 4) {
+                app.stage.addChild(sprite);
+                if (tile === 4) { // tiles with collision box
                     let wallData = {
                         id: `wall_${rowIndex}_${colIndex}`,
                         x: sprite.x + 8,
@@ -58,7 +59,6 @@ export async function background_init(app, socket) {
                     socket.emit('addWall', wallData);
                     walls[wallData.id] = wallData;
                 }
-            }
           });
         });
       });
