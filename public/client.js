@@ -25,7 +25,7 @@ let boundingBoxes = {};
 
 // setup socket
 const domain = window.location.hostname;
-let socketUrl = "wss://foodwars.vihdutta.com";
+let socketUrl = "wss://foodwars.up.railway.app";
 const socket = io(socketUrl);
 socket.on("connect", () => {
   console.log("socket", socket.id, "connected");
