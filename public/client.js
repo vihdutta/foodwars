@@ -24,46 +24,11 @@ const playerLength = 70;
 let boundingBoxes = {};
 
 // setup socket
-const socketURLs = [
-  "wss://foodwars.vihdutta.com", // digital ocean
-  "wss://foodwars.up.railway.app", // new railway test
-];
-
-let fallbackUrl = "ws://localhost:6969";
-let connected = false;
-let socket = null;
-
-async function tryConnect(urls, fallback) {
-  for (let url of urls) {
-    try {
-      socket = io(url, { timeout: 10 });  // quick timeout
-      await new Promise((resolve, reject) => {
-        socket.on("connect", () => {
-          connected = true;
-          console.log("Connected to", url, "with ID:", socket.id);
-          resolve();
-        });
-        socket.on("connect_error", () => {
-          socket.close();
-          reject();
-        });
-      });
-      break;  // if connected, exit
-    } catch {
-      console.log("Failed to connect to", url);
-    }
-  }
-
-  if (!connected) {
-    console.log("Falling back to localhost...");
-    socket = io(fallback);
-    socket.on("connect", () => {
-      console.log("Connected to fallback:", fallback, "with ID:", socket.id);
-    });
-  }
-}
-
-tryConnect(socketURLs, fallbackUrl);
+let socketUrl = "ws://localhost:8080";
+const socket = io(socketUrl);
+socket.on("connect", () => {
+  console.log("socket", socket.id, "connected");
+})
 
 // init app and gui
 const app = new Application({
