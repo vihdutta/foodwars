@@ -1,0 +1,15 @@
+{
+  "compilerOptions": {
+    "target": "es2017",                  // Target ECMAScript version
+    "module": "ESNext",               // Use ESNext module system
+    "outDir": "./dist",               // Output directory for compiled files
+    "rootDir": "./src",               // Root directory for TypeScript files
+    "strict": false,                   // Enable strict type-checking
+    "esModuleInterop": true,          // Allow default imports from CommonJS modules
+    "moduleResolution": "node",       // Resolve modules in Node.js style
+    "skipLibCheck": true              // Skip type checking of declaration files
+  },
+  "type":"module",
+  "include": ["src/**/*", "public/**/*"], // Include all TypeScript files
+  "exclude": ["node_modules"],             // Exclude node_modules
+}

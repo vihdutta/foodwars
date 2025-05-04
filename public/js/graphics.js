@@ -1,3 +1,5 @@
+const PIXI = window.PIXI;
+
 const Sprite = PIXI.Sprite;
 const Assets = PIXI.Assets;
 const Graphics = PIXI.Graphics;

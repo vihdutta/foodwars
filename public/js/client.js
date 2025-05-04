@@ -8,7 +8,7 @@ import {
 } from './graphics.js';
 import { handleDevBoundingBox, handleDevBulletBoundingBox, handleDevEnemyBoundingBox, handleDevWallBoundingBox } from './dev.js';
 import { returnUsername } from './util.js';
-import { mouse, keyboard, handleMouseMove, handleKeyDown, handleKeyUp } from './movement.js';
+import { mouse, keyboard, handleMouseMove, handleMouseDown, handleMouseUp, handleKeyDown, handleKeyUp } from './movement.js';
 import { updateCamera } from './camera.js';
 
 // variable setup
@@ -34,7 +34,7 @@ socket.on("connect", () => {
 const app = new Application({
   width: 500,
   height: 500,
-  transparent: false,
+  backgroundAlpha: 1,
   antialias: true,
   resizeTo: window,
 });
@@ -56,7 +56,8 @@ const wallCount = wall_count_init();
 window.addEventListener("keydown", handleKeyDown);
 window.addEventListener("keyup", handleKeyUp);
 window.addEventListener("mousemove", handleMouseMove);
-window.addEventListener("mousedown", handleMouseDown);
+window.addEventListener('mousedown', handleMouseDown);
+window.addEventListener('mouseup',   handleMouseUp);
 
 // PLAYERS
 const enemySprites = {}; // Stores the other player sprites
@@ -113,6 +114,7 @@ socket.on("clientUpdateSelf", (playerData) => {
       app.stage.addChild(dimRectangle);
       var elements = document.getElementsByClassName("container-fluid");
       for (var i = 0; i < elements.length; i++) {
+        //var element = elements[i] as HTMLElement;
         var element = elements[i];
         element.style.display = "block";
       }
@@ -136,6 +138,7 @@ setInterval(() => {
         mouse.y - app.renderer.height / 2,
         mouse.x - app.renderer.width / 2
       ) + Math.PI / 2,
+      mb1: mouse.mb1,
       keyboard: keyboard
     });
   }
@@ -145,55 +148,6 @@ setInterval(() => {
 let bulletSprites = {};
 
 const bulletTexture = await Assets.load("images/bullet.png");
-
-let isMouseDown = false;
-let fireIntervalId = null;
-
-function handleMouseDown(event) {
-  isMouseDown = true;
-  shootBulletsContinuously();
-}
-
-function handleMouseUp(event) {
-  isMouseDown = false;
-  clearInterval(fireIntervalId);
-  fireIntervalId = null;
-}
-
-function fireBullet() {
-  if (playing) {
-    const audio = new Audio('mp3/pop.mp3');
-    audio.play();
-    const offsetFactor = 30; // bullet offset from player
-    socket.emit("serverUpdateNewBullet", {
-      id: crypto.randomUUID(),
-      parent_id: socket.id,
-      parent_username: username,
-      x: player.x + Math.cos(player.rotation - Math.PI / 2) * offsetFactor,
-      y: player.y + Math.sin(player.rotation - Math.PI / 2) * offsetFactor,
-      width: 20,
-      height: 5,
-      rotation: player.rotation - Math.PI / 2 - ((Math.random() - 0.5) * 0.05),
-      // player.rotation - pi/2 = rotation
-      // the random part is to make the bullets spread out a bit
-    });
-  }
-}
-
-function shootBulletsContinuously() {
-  if (fireIntervalId === null) {
-    fireBullet(); // Fire immediately on mouse down
-    fireIntervalId = setInterval(() => {
-      if (isMouseDown) {
-        fireBullet();
-      }
-    }, 100); // rate of fire. tie rate of fire to bloom in future?
-  }
-}
-
-// Attach event listeners
-document.addEventListener("mousedown", handleMouseDown);
-document.addEventListener("mouseup", handleMouseUp);
 
 socket.on("clientUpdateNewBullet", (bulletData) => { // creates a new bullet sprite
   const bulletSprite = Sprite.from(bulletTexture);
@@ -281,18 +235,23 @@ app.ticker.add(() => {
 
 // when spawn is pressed
 var button = document.getElementById("spawn");
-button.addEventListener("click", function () {
-  playing = true;
-  app.stage.addChild(player);
-  app.stage.addChild(UIElements);
-  app.stage.removeChild(dimRectangle);
-  var elements = document.getElementsByClassName("container-fluid");
-  for (var i = 0; i < elements.length; i++) {
-    var element = elements[i];
-    element.style.display = "none";
-  }
-  username = returnUsername();
-});
+if (button) {
+  button.addEventListener("click", function () {
+    playing = true;
+    app.stage.addChild(player);
+    app.stage.addChild(UIElements);
+    app.stage.removeChild(dimRectangle);
+    var elements = document.getElementsByClassName("container-fluid");
+    for (var i = 0; i < elements.length; i++) {
+      //var element = elements[i] as HTMLElement;
+      var element = elements[i];
+      element.style.display = "none";
+    }
+    username = returnUsername();
+  });
+} else {
+  console.error("Button with id 'spawn' not found.");
+}
 
 // dev
 document.addEventListener("keydown", (event) => {
@@ -328,6 +287,7 @@ setInterval(sendPing, 1000);
 
 
 // DISPLAY ON CANVAS
+// document.body.appendChild(app.view as HTMLCanvasElement);
 document.body.appendChild(app.view);
 UIElements.addChild(socketText);
 UIElements.addChild(inventory);

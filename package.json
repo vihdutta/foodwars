@@ -101,6 +101,7 @@
     "simple-update-notifier": "^1.1.0",
     "socket.io": "^4.8.1",
     "socket.io-adapter": "^2.5.5",
+    "socket.io-client": "^4.8.1",
     "socket.io-parser": "^4.2.4",
     "statuses": "^2.0.1",
     "supports-color": "^5.5.0",
@@ -130,5 +131,11 @@
     "url": "https://github.com/vihdutta/foodwars/issues"
   },
   "homepage": "https://github.com/vihdutta/foodwars#readme",
-  "type": "module"
+  "type": "module",
+  "devDependencies": {
+    "@types/node": "^22.15.3",
+    "ts-node": "^10.9.2",
+    "ts-node-dev": "^2.0.0",
+    "typescript": "^5.8.3"
+  }
 }

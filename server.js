@@ -6,7 +6,7 @@ import {
 } from "./src/backend/physics.js";
 import { bestSpawnPoint } from "./src/backend/spawn.js";
 
-import { performance } from "perf_hooks";
+import crypto from 'crypto'
 import express from "express";
 import { createServer } from "http";
 import { Server } from "socket.io";
@@ -34,7 +34,7 @@ io.on("connection", (socket) => {
   // updates the player
   socket.on("serverUpdateSelf", (playerData) => {
     let player = players[playerData.id];
-    if (!player || player.heath <= 0) {
+    if (!player || player.health <= 0) {
       let spawnPoint = bestSpawnPoint(players);
       players[playerData.id] = {
         ...playerData,
@@ -51,6 +51,20 @@ io.on("connection", (socket) => {
       width: playerLength,
       height: playerLength,
     };
+    if (playerData.mb1) {
+      let bullet = {
+        id: crypto.randomUUID(),
+        parent_id: playerData.id,
+        parent_username: playerData.username,
+        x: player.x + Math.cos(playerData.rotation - Math.PI / 2) * 30,
+        y: player.y + Math.sin(playerData.rotation - Math.PI / 2) * 30,
+        width: 20,
+        height: 5,
+        rotation: playerData.rotation - Math.PI / 2 - ((Math.random() - 0.5) * 0.05),
+      }
+      bullets[bullet.id] = bullet;
+      io.emit("clientUpdateNewBullet", bullet);
+    }
 
     determinePlayerMovement(player, playerBounds, playerData, walls); // also checks player-wall collisions
     bulletPlayerCollisions(
@@ -66,18 +80,6 @@ io.on("connection", (socket) => {
     socket.emit("clientUpdateSelf", players[playerData.id]);
   });
 
-  socket.on("serverUpdateNewBullet", (bullet) => {
-    if (
-      players[socket.id] &&
-      players[socket.id].hasOwnProperty("health") &&
-      players[socket.id].health <= 0
-    ) {
-      return;
-    }
-
-    bullets[bullet.id] = bullet;
-    io.emit("clientUpdateNewBullet", bullet);
-  });
 
   socket.on("addWall", (wallData) => {
     walls[wallData.id] = wallData;

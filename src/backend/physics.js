@@ -65,6 +65,7 @@ export function bulletPlayerCollisions(
   playerBounds
 ) {
   // Check collision between bullet and player
+  // Object.entries(bullets).forEach(([bulletId, bullet]: [string, any]) => {
   Object.entries(bullets).forEach(([bulletId, bullet]) => {
     if (bullet.parent_id !== socket.id) {
       // if the bullet isn't fired from the same person check collision
