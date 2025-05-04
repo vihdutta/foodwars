@@ -19,6 +19,8 @@ const io = new Server(server);
 let players = {};
 let bullets = {};
 let walls = {};
+const lastPlayersShotTime = {};
+const bulletCooldown = 1000 / 20; // 1000ms / 20 shots = 50ms between shots
 const playerLength = 70;
 
 // io connections
@@ -52,18 +54,23 @@ io.on("connection", (socket) => {
       height: playerLength,
     };
     if (playerData.mb1) {
-      let bullet = {
-        id: crypto.randomUUID(),
-        parent_id: playerData.id,
-        parent_username: playerData.username,
-        x: player.x + Math.cos(playerData.rotation - Math.PI / 2) * 30,
-        y: player.y + Math.sin(playerData.rotation - Math.PI / 2) * 30,
-        width: 20,
-        height: 5,
-        rotation: playerData.rotation - Math.PI / 2 - ((Math.random() - 0.5) * 0.05),
+      const now = Date.now();
+
+      if (!lastPlayersShotTime[playerData.id] || now - lastPlayersShotTime[playerData.id] >= bulletCooldown) {
+        lastPlayersShotTime[playerData.id] = now;
+        let bullet = {
+          id: crypto.randomUUID(),
+          parent_id: playerData.id,
+          parent_username: playerData.username,
+          x: player.x + 32 + Math.cos(playerData.rotation - Math.PI / 2) * 30,
+          y: player.y + 32 + Math.sin(playerData.rotation - Math.PI / 2) * 30,
+          width: 20,
+          height: 5,
+          rotation: playerData.rotation - Math.PI / 2 - ((Math.random() - 0.5) * 0.05),
+        }
+        bullets[bullet.id] = bullet;
+        io.emit("clientUpdateNewBullet", bullet);
       }
-      bullets[bullet.id] = bullet;
-      io.emit("clientUpdateNewBullet", bullet);
     }
 
     determinePlayerMovement(player, playerBounds, playerData, walls); // also checks player-wall collisions

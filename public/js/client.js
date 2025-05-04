@@ -158,12 +158,13 @@ socket.on("clientUpdateNewBullet", (bulletData) => { // creates a new bullet spr
   bulletSprite.width = bulletData.width;
   bulletSprite.height = bulletData.height;
   app.stage.addChild(bulletSprite);
+  console.log(app.stage.getChildIndex(bulletSprite));
   bulletSprites[bulletData.id] = bulletSprite;
 });
 
 socket.on("clientUpdateAllBullets", (bulletsData) => { // updates all bullet sprites' positions
   const connectedBulletIds = Object.keys(bulletsData);
-
+  bulletCount.text = "Bullets: " + Object.keys(bulletsData).length;
   for (const bulletId in bulletSprites) {
     if (!connectedBulletIds.includes(bulletId)) {
       const bulletSprite = bulletSprites[bulletId];
