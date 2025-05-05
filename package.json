@@ -118,8 +118,9 @@
     "ws": "^8.17.1"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node server.js"
+    "build": "tsc",
+    "start": "node dist/server.js",
+    "dev": "ts-node-dev --respawn --transpile-only --esm src/server.ts"
   },
   "repository": {
     "type": "git",

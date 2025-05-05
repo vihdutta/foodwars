@@ -12,7 +12,7 @@ export function bestSpawnPoint(players) {
     spawnPoints.forEach((spawnPoint) => {
       let minDistance = Infinity;
   
-      Object.values(players).forEach((player) => {
+      Object.values(players).forEach((player: any) => {
         const distance = Math.sqrt(
           Math.pow(player.x - spawnPoint[0], 2) + Math.pow(player.y - spawnPoint[1], 2)
         );

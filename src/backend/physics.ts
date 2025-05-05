@@ -1,4 +1,4 @@
-const bulletSpeed = 2000; // pixels per second
+const bulletSpeed = 1000; // pixels per second
 
 export function checkCollision(aBox, bBox) {
   return (
@@ -66,7 +66,7 @@ export function bulletPlayerCollisions(
 ) {
   // Check collision between bullet and player
   // Object.entries(bullets).forEach(([bulletId, bullet]: [string, any]) => {
-  Object.entries(bullets).forEach(([bulletId, bullet]) => {
+  Object.entries(bullets).forEach(([bulletId, bullet]: [string, any]) => {
     if (bullet.parent_id !== socket.id) {
       // if the bullet isn't fired from the same person check collision
       if (checkCollision(bullet, playerBounds)) {
@@ -91,7 +91,7 @@ export function bulletPlayerCollisions(
 
 export function bulletWallCollisions(walls, bullets) {
   Object.entries(walls).forEach(([wallId, wall]) => {
-    Object.entries(bullets).forEach(([bulletId, bullet]) => {
+    Object.entries(bullets).forEach(([bulletId, bullet]: [string, any]) => {
       if (checkCollision(wall, bullet)) {
         delete bullets[bulletId];
       }

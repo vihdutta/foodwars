@@ -4,7 +4,7 @@ import {
   coordinates_text_init, fps_text_init,
   inventory_init, health_bar_init, health_bar_value_init,
   socket_text_init, notification_init, bullet_count_init, ping_init,
-  wall_count_init
+  wall_count_init, centering_test_init
 } from './graphics.js';
 import { handleDevBoundingBox, handleDevBulletBoundingBox, handleDevEnemyBoundingBox, handleDevWallBoundingBox } from './dev.js';
 import { returnUsername } from './util.js';
@@ -21,6 +21,7 @@ let username = " ";
 let UIElements = new PIXI.Container();
 let lastPingSentTime = 0;
 const playerLength = 70;
+let widthForHealthBar = 0;
 let boundingBoxes = {};
 
 // setup socket
@@ -36,6 +37,7 @@ const app = new Application({
   height: 500,
   backgroundAlpha: 1,
   antialias: true,
+  resolution: window.devicePixelRatio,
   resizeTo: window,
 });
 let wallsData = await background_init(app, socket);
@@ -51,6 +53,7 @@ const { notificationContainer, notification } = notification_init();
 const bulletCount = bullet_count_init();
 const pingText = ping_init();
 const wallCount = wall_count_init();
+const centering_test = centering_test_init();
 
 // EVENT LISTENERS
 window.addEventListener("keydown", handleKeyDown);
@@ -104,11 +107,11 @@ socket.on("clientUpdateAllEnemies", (enemiesData) => {
 socket.on("clientUpdateSelf", (playerData) => {
   if (playing) {
     if (playerData.health <= 100 && playerData.health > 0) {
-      healthBarValue.width = playerData.health * 5;
+      widthForHealthBar = playerData.health * 0.6 - 2;
     } else {
       console.log("dead");
       playing = false;
-      healthBarValue.width = 0;
+      widthForHealthBar = 0;
       app.stage.removeChild(player);
       app.stage.removeChild(UIElements);
       app.stage.addChild(dimRectangle);
@@ -209,24 +212,8 @@ const camera = {
   scale: 1,
 };
 
-// putting away while fixing other issues
-function handleWheel(event) {
-  const zoomIntensity = 0.1;
-  if (event.deltaY < 0) {
-    // Scrolling up
-    camera.scale += zoomIntensity;
-  } else {
-    // Scrolling down
-    camera.scale -= zoomIntensity;
-  }
-  camera.scale = Math.max(0.2, Math.min(camera.scale, 1.2)); // Limit the zoom level
-  app.stage.scale.set(camera.scale);
-}
-
-window.addEventListener("wheel", handleWheel);
-
 app.ticker.add(() => {
-  updateCamera(app, player,
+  updateCamera(app, player, widthForHealthBar,
     camera, UIElements,
     dimRectangle, coordinatesText,
     FPSText, socketText, inventory,
@@ -299,5 +286,21 @@ UIElements.addChild(FPSText); // removed UIElements since that is added seperate
 UIElements.addChild(bulletCount);
 UIElements.addChild(pingText);
 UIElements.addChild(wallCount);
+UIElements.addChild(centering_test);
 app.stage.addChild(notificationContainer);
 app.stage.addChild(dimRectangle);
+
+
+function layoutUI() {
+  const w = app.screen.width;
+  const h = app.screen.height;
+  const pad = 0.02;
+
+  centering_test.position.set(
+    w * pad,
+    h * (1 - pad) - centering_test.height
+  );
+}
+layoutUI();
+window.addEventListener("resize", layoutUI);
+

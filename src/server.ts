@@ -3,14 +3,14 @@ import {
   bulletPlayerCollisions,
   determinePlayerMovement,
   updateBulletPosition,
-} from "./src/backend/physics.js";
-import { bestSpawnPoint } from "./src/backend/spawn.js";
+} from "./backend/physics.js";
+import { bestSpawnPoint } from "./backend/spawn.js";
 
 import crypto from 'crypto'
 import express from "express";
 import { createServer } from "http";
 import { Server } from "socket.io";
-import { sendPlayerDataToClientsInterval, updateBulletPositionInterval, removeDisconnectedPlayersInterval } from "./src/backend/passive_operations.js";
+import { sendPlayerDataToClientsInterval, updateBulletPositionInterval, removeDisconnectedPlayersInterval } from "./backend/passive_operations.js";
 
 const app = express();
 const server = createServer(app);
@@ -20,7 +20,7 @@ let players = {};
 let bullets = {};
 let walls = {};
 const lastPlayersShotTime = {};
-const bulletCooldown = 1000 / 20; // 1000ms / 20 shots = 50ms between shots
+const bulletCooldown = 1000 / 10; // 1000ms / 10 shots = 100ms between shots
 const playerLength = 70;
 
 // io connections
@@ -94,7 +94,7 @@ io.on("connection", (socket) => {
 
   socket.on("disconnect", () => {
     console.log("SERVER: socket", socket.id, "disconnected");
-    io.emit("notification", socket.id + " disconnected");
+    // io.emit("notification", socket.id + " disconnected");
     delete players[socket.id];
   });
 });

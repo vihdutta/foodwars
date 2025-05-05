@@ -128,9 +128,9 @@ export function inventory_init() {
 
 export function health_bar_init() {
     const healthBar = new Graphics();
-    healthBar.lineStyle({ width: 2, color: 0x000000, alpha: 0.5 });
-    healthBar.beginFill(0x222222);
-    healthBar.drawRoundedRect(0, 0, 500, 30, 5);
+    healthBar.lineStyle({ width: 2, color: 0x000000, alpha: 1 });
+    healthBar.beginFill(0x444444);
+    healthBar.drawRoundedRect(0, 0, 60, 5, 10);
     healthBar.endFill();
     healthBar.x = 0;
     healthBar.y = 0;
@@ -139,8 +139,8 @@ export function health_bar_init() {
 
 export function health_bar_value_init() {
     const healthBarValue = new Graphics();
-    healthBarValue.beginFill(0x13ea22);
-    healthBarValue.drawRoundedRect(0, 0, 500, 30, 5);
+    healthBarValue.beginFill(0x7be74a);
+    healthBarValue.drawRoundedRect(0, 0, 60, 5, 10);
     healthBarValue.endFill();
     healthBarValue.x = 0;
     healthBarValue.y = 0;
@@ -152,8 +152,6 @@ export function socket_text_init(socket) {
         fontFamily: "Arial",
         fontSize: 10,
         fill: "ffffff",
-        stroke: "000000",
-        strokeThickness: 4
     });
     socketText.x = 0;
     socketText.y = 0;
@@ -166,13 +164,10 @@ export function notification_init() {
 
     function notification(text) {
         const notificationBar = new Graphics();
-        notificationBar.beginFill(0x000000, 0.5);
-        notificationBar.drawRoundedRect(0, 0, 400, 30, 5);
-        notificationBar.endFill();
         notificationBar.x = -5;
         notificationBar.y = notificationOffsetY;
 
-        const notification = new PIXI.Text(text, {
+        const notificationStyle = new PIXI.TextStyle({
             fontFamily: "Arial",
             fontSize: 21,
             fill: "white",
@@ -180,6 +175,13 @@ export function notification_init() {
             stroke: "000000",
             strokeThickness: 4
         });
+        const notification = new PIXI.Text(text, notificationStyle);
+        const metrics = PIXI.TextMetrics.measureText(text, notificationStyle);
+
+        notificationBar.beginFill(0x000000, 0.5);
+        notificationBar.drawRoundedRect(0, 0, metrics.width + 10, 30, 5);
+        notificationBar.endFill();
+
         notification.x = 0;
         notification.y = notificationOffsetY;
 
@@ -197,7 +199,7 @@ export function notification_init() {
             notificationContainer.children.forEach((child) => {
                 child.y -= 40;
             });
-        }, 5000);
+        }, 10000);
     }
 
     return { notificationContainer, notification };
@@ -243,4 +245,16 @@ export function wall_count_init() {
     wallCount.y = 0;
 
     return wallCount;
+}
+
+export function centering_test_init() {
+    const centeringText = new PIXI.Text("HELLO", {
+    fontFamily: "Arial",
+    fontSize: 30,
+    fill: "ffffff",
+    });
+    centeringText.x = 0;
+    centeringText.y = 0
+
+    return centeringText;
 }
