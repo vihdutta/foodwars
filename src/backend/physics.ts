@@ -99,10 +99,10 @@ export function bulletWallCollisions(walls, bullets) {
   });
 }
 
-
 export function updateBulletPosition(io, bullets, dt) {
     if (Object.keys(bullets).length === 0) return;
-  
+    
+    const minimalBullets = {};
     for (const id in bullets) {
       const b = bullets[id];
       b.x += Math.cos(b.rotation) * bulletSpeed * dt;
@@ -112,7 +112,7 @@ export function updateBulletPosition(io, bullets, dt) {
         delete bullets[id];
       }
     }
-  
+    
     io.emit("clientUpdateAllBullets", bullets);
   }
   

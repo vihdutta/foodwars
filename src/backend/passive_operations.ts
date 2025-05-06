@@ -8,14 +8,24 @@ export function sendPlayerDataToClientsInterval(io, players) {
     for (const playerSocketId in players) {
       const enemies = { ...players };
       delete enemies[playerSocketId];
-  
-      if (enemies[playerSocketId]) {
-        if (enemies[playerSocketId].health <= 0) {
-          delete enemies[playerSocketId];
+      
+      const minimalEnemies = {};
+      for (const enemyId in enemies) {
+        const enemy = enemies[enemyId];
+        // Only include essential data for rendering enemies
+        if (enemy.health > 0) { // Client already handles removing based on health, but filtering here reduces data slightly more
+          minimalEnemies[enemyId] = {
+            id: enemyId, // Client uses the key, but including id might be useful for consistency or future use
+            x: enemy.x,
+            y: enemy.y,
+            rotation: enemy.rotation,
+            health: enemy.health // Client needs health to know if enemy should be rendered/removed
+          };
         }
       }
-      // Emit the updated data to the current player
-      io.to(playerSocketId).emit("clientUpdateAllEnemies", enemies);
+
+      // Emit the minimized enemy data to the current player
+      io.to(playerSocketId).emit("clientUpdateAllEnemies", minimalEnemies);
     }
   }, 50);
 }
