@@ -20,3 +20,6 @@ send bullet data 1ms -> 5ms a second
 
 ## features
 make it so you can break some walls. if they're broken and people walk through the broken bits, reduced movement speed
+
+## running
+use `npm run build` to create the `.js` files and then run the project with `npm run dev`

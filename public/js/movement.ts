@@ -3,6 +3,7 @@ export const mouse = {
     x: 0,
     y: 0,
 };
+
 export const keyboard = {
     w: false,
     a: false,
@@ -10,28 +11,30 @@ export const keyboard = {
     d: false,
     shift: false,
 };
-export function handleMouseMove(event) {
+
+export function handleMouseMove(event: MouseEvent) {
     mouse.x = event.clientX;
     mouse.y = event.clientY;
 }
-export function handleMouseDown(event) {
-    if (event.button === 0)
-        mouse.mb1 = true;
+
+export function handleMouseDown(event: MouseEvent) {
+    if (event.button === 0) mouse.mb1 = true;
+  }
+
+export function handleMouseUp(event: MouseEvent) {
+if (event.button === 0) mouse.mb1 = false;
 }
-export function handleMouseUp(event) {
-    if (event.button === 0)
-        mouse.mb1 = false;
-}
-export function handleKeyDown(event) {
+
+export function handleKeyDown(event: KeyboardEvent) {
     const key = event.key.toLowerCase();
     if (keyboard.hasOwnProperty(key)) {
         keyboard[key] = true;
     }
 }
-export function handleKeyUp(event) {
+
+export function handleKeyUp(event: KeyboardEvent) {
     const key = event.key.toLowerCase();
     if (keyboard.hasOwnProperty(key)) {
         keyboard[key] = false;
     }
 }
-//# sourceMappingURL=movement.js.map

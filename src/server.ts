@@ -20,7 +20,7 @@ let players = {};
 let bullets = {};
 let walls = {};
 const lastPlayersShotTime = {};
-const bulletCooldown = 1000 / 10; // 1000ms / 10 shots = 100ms between shots
+const bulletCooldown = 1000 / 10; // 1000ms / 15 shots = 66.7ms between shots
 const playerLength = 70;
 
 // io connections
