@@ -30,8 +30,15 @@ let boundingBoxes: {[key: string]: any} = {};
 // setup socket
 let socketUrl = "ws://localhost:8080";
 const socket = io(socketUrl);
+
+function getRoomFromHash(): string {
+  const h = window.location.hash;
+  return h.length > 1 ? h.slice(1) : "0";
+}
+
 socket.on("connect", () => {
   console.log("socket", socket.id, "connected");
+  socket.emit("joinRoom", getRoomFromHash());
 })
 
 // init app and gui
