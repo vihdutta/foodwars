@@ -28,7 +28,9 @@ let widthForHealthBar: number = 0;
 let boundingBoxes: {[key: string]: any} = {};
 
 // setup socket
-let socketUrl = "ws://localhost:8080";
+const { protocol, hostname } = window.location;
+const port = (hostname === 'localhost') ? '8080' : window.location.port; 
+const socketUrl = `${protocol}//${hostname}${port ? `:${port}` : ''}`;
 const socket = io(socketUrl);
 
 function getRoomFromHash(): string {
