@@ -258,3 +258,23 @@ export function centering_test_init() {
 
     return centeringText;
 }
+
+export function username_init(username: string = "") {
+    const usernameText = new PIXI.Text(username, {
+        fontFamily: "Arial",
+        fontSize: 30,
+        fill: "ffffff",
+        stroke: "000000",
+        strokeThickness: 4
+    });
+    
+    // Update the username text when it changes
+    setInterval(() => {
+        const userInput = document.getElementById("username") as HTMLInputElement;
+        if (userInput && userInput.value) {
+            usernameText.text = userInput.value.slice(0, 12);
+        }
+    }, 100);
+    
+    return usernameText;
+}

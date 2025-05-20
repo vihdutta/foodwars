@@ -4,7 +4,7 @@ import {
   coordinates_text_init, fps_text_init,
   inventory_init, health_bar_init, health_bar_value_init,
   socket_text_init, notification_init, bullet_count_init, ping_init,
-  wall_count_init, centering_test_init
+  wall_count_init, centering_test_init, username_init
 } from './graphics.js';
 import { handleDevBoundingBox, handleDevBulletBoundingBox, handleDevEnemyBoundingBox, handleDevWallBoundingBox } from './dev.js';
 import { returnUsername } from './util.js';
@@ -64,6 +64,7 @@ const bulletCount = bullet_count_init();
 const pingText = ping_init();
 const wallCount = wall_count_init();
 const centering_test = centering_test_init();
+const usernameText = username_init();
 
 // EVENT LISTENERS
 window.addEventListener("keydown", handleKeyDown);
@@ -106,7 +107,7 @@ socket.on("clientUpdateAllEnemies", (enemiesData: any) => {
   for (const enemyId in enemySprites) {
     const enemyData = enemiesData[enemyId];
 
-    // if that id is gone, or if they’re dead, remove the sprite
+    // if that id is gone, or if they're dead, remove the sprite
     if (!enemyData || enemyData.health <= 0) {
       const sprite = enemySprites[enemyId];
       app.stage.removeChild(sprite);
@@ -232,7 +233,7 @@ app.ticker.add(() => {
     dimRectangle, coordinatesText,
     FPSText, socketText, inventory,
     healthBar, healthBarValue, notificationContainer,
-    bulletCount, pingText, wallCount);
+    bulletCount, pingText, wallCount, usernameText);
 });
 
 // when spawn is pressed
@@ -303,6 +304,7 @@ UIElements.addChild(bulletCount);
 UIElements.addChild(pingText);
 UIElements.addChild(wallCount);
 UIElements.addChild(centering_test);
+UIElements.addChild(usernameText);
 app.stage.addChild(notificationContainer);
 app.stage.addChild(dimRectangle);
 

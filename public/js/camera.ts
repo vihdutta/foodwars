@@ -18,7 +18,7 @@ export function hideSpritesOutsideScreen(app: any) {
     });
 }
 
-export function updateCamera(app: any, player: any, widthForHealthBar: number, camera: any, UIElements: any, dimRectangle: any, coordinatesText: any, FPSText: any, socketText: any, inventory: any, healthBar: any, healthBarValue: any, notificationContainer: any, bulletCount: any, pingText: any, wallCount: any) {
+export function updateCamera(app: any, player: any, widthForHealthBar: number, camera: any, UIElements: any, dimRectangle: any, coordinatesText: any, FPSText: any, socketText: any, inventory: any, healthBar: any, healthBarValue: any, notificationContainer: any, bulletCount: any, pingText: any, wallCount: any, usernameText: any) {
     hideSpritesOutsideScreen(app);
     // Adjust the camera position to keep the player in the middle
     camera.x = player.x;
@@ -70,5 +70,8 @@ export function updateCamera(app: any, player: any, widthForHealthBar: number, c
 
     wallCount.x = camera.x - (window.innerWidth/2) / camera.scale + 20;
     wallCount.y = camera.y - (window.innerHeight/2) / camera.scale + 100;
+
+    usernameText.x = camera.x + (window.innerWidth/2) / camera.scale - window.innerWidth/2 - usernameText.width/2;
+    usernameText.y = camera.y - (window.innerHeight/2) / camera.scale + window.innerHeight/2 - 75;
 }
 
