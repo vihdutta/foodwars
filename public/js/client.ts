@@ -98,15 +98,23 @@ function renderEnemies(enemiesData: any) {
 }
 
 socket.on("clientUpdateAllEnemies", (enemiesData: any) => {
+  delete enemiesData[socket.id];
+
   const connectedEnemyIds = Object.keys(enemiesData);
+
+  // clean up old sprites
   for (const enemyId in enemySprites) {
-    if (!connectedEnemyIds.includes(enemyId) || enemiesData[enemyId].health <= 0) {
-      const enemySprite = enemySprites[enemyId];
-      app.stage.removeChild(enemySprite);
+    const enemyData = enemiesData[enemyId];
+
+    // if that id is gone, or if they’re dead, remove the sprite
+    if (!enemyData || enemyData.health <= 0) {
+      const sprite = enemySprites[enemyId];
+      app.stage.removeChild(sprite);
       delete enemySprites[enemyId];
     }
   }
 
+  // update everyone still in enemiesData
   renderEnemies(enemiesData);
 });
 
