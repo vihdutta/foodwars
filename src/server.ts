@@ -136,14 +136,14 @@ io.on("connection", (socket: Socket) => {
   });
 });
 
-// Broadcast all players ("enemies") 20×/s per room
+// broadcast all enemies
 setInterval(() => {
   for (const [roomId, game] of Object.entries(games)) {
     io.to(roomId).emit("clientUpdateAllEnemies", game.players);
   }
-}, 1000 / 20);
+}, 1000 / 50);
 
-// Update & broadcast bullets 60×/s per room
+// update and broadcast all bullets
 setInterval(() => {
   const dt = 1 / 60; // 60 times per second
   for (const [roomId, game] of Object.entries(games)) {
@@ -152,7 +152,7 @@ setInterval(() => {
     // updateBulletPosition already emits "clientUpdateAllBullets"
     // io.to(roomId).emit("clientUpdateAllBullets", game.bullets);
   }
-}, 1000 / 60);
+}, 1000 / 50);
 
 // display player counts and names for each room every second
 setInterval(() => {

@@ -132,8 +132,6 @@ export function health_bar_init() {
     healthBar.beginFill(0x444444);
     healthBar.drawRoundedRect(0, 0, 60, 5, 10);
     healthBar.endFill();
-    healthBar.x = 0;
-    healthBar.y = 0;
     return healthBar;
 }
 
@@ -268,7 +266,6 @@ export function username_init(username: string = "") {
         strokeThickness: 4
     });
     
-    // Update the username text when it changes
     setInterval(() => {
         const userInput = document.getElementById("username") as HTMLInputElement;
         if (userInput && userInput.value) {
@@ -277,4 +274,9 @@ export function username_init(username: string = "") {
     }, 100);
     
     return usernameText;
+}
+
+export function enemy_ui_init() {
+    const container = new PIXI.Container();
+    return container;
 }

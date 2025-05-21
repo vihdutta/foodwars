@@ -4,7 +4,8 @@ import {
   coordinates_text_init, fps_text_init,
   inventory_init, health_bar_init, health_bar_value_init,
   socket_text_init, notification_init, bullet_count_init, ping_init,
-  wall_count_init, centering_test_init, username_init
+  wall_count_init, centering_test_init, username_init,
+  enemy_ui_init
 } from './graphics.js';
 import { handleDevBoundingBox, handleDevBulletBoundingBox, handleDevEnemyBoundingBox, handleDevWallBoundingBox } from './dev.js';
 import { returnUsername } from './util.js';
@@ -26,6 +27,22 @@ let lastPingSentTime: number = 0;
 const playerLength = 70;
 let widthForHealthBar: number = 0;
 let boundingBoxes: {[key: string]: any} = {};
+const enemyUIElements: {[key: string]: any} = {};
+
+import type { Text, Graphics } from 'pixi.js';
+
+interface EnemyUI {
+  nameText: Text;
+  hpBarBg: Graphics;
+  hpBar: Graphics;
+}
+
+const enemyUI: Record<string, EnemyUI> = {};
+
+// tweak these to taste:
+const ENEMY_BAR_WIDTH   = 50;
+const ENEMY_BAR_HEIGHT  = 5;
+const ENEMY_BAR_Y_OFFSET = 8;
 
 // setup socket
 const { protocol, hostname } = window.location;
@@ -52,6 +69,11 @@ const app = new Application({
   resolution: window.devicePixelRatio,
   resizeTo: window,
 });
+
+// Add enemy UI container initialization here
+const enemyUIContainer = enemy_ui_init();
+app.stage.addChild(enemyUIContainer);
+
 let wallsData: any = await background_init(app, socket);
 const player = await player_init();
 const dimRectangle = menu_dimmer_init(player);
@@ -81,12 +103,34 @@ const enemyTexture = await Assets.load("images/enemies.png");
 function renderEnemies(enemiesData: any) {
   for (const enemyId in enemiesData) {
     const enemyData = enemiesData[enemyId];
+    
+    // Handle enemy sprite
     if (!enemySprites[enemyId] && enemiesData[enemyId].health > 0) {
       const enemySprite = Sprite.from(enemyTexture);
       enemySprite.scale.set(2, 2);
       enemySprite.anchor.set(0.5, 0.5);
       app.stage.addChild(enemySprite);
       enemySprites[enemyId] = enemySprite;
+
+      // Initialize UI elements for new enemy
+      if (!enemyUIElements[enemyId]) {
+        const container = new PIXI.Container();
+        const healthBar = health_bar_init();
+        const healthBarValue = health_bar_value_init();
+        const usernameText = username_init();
+        
+        container.addChild(healthBar);
+        container.addChild(healthBarValue);
+        container.addChild(usernameText);
+        
+        enemyUIContainer.addChild(container);
+        enemyUIElements[enemyId] = {
+          container,
+          healthBar,
+          healthBarValue,
+          usernameText
+        };
+      }
     }
 
     const enemySprite = enemySprites[enemyId];
@@ -94,26 +138,76 @@ function renderEnemies(enemiesData: any) {
     enemySprite.y = enemyData.y + 32 - 4;
     enemySprite.rotation = enemyData.rotation;
 
+    // Update UI elements
+    if (enemyUIElements[enemyId]) {
+      const { container, healthBar, healthBarValue, usernameText } = enemyUIElements[enemyId];
+      
+      // Position container relative to enemy
+      container.x = enemyData.x;
+      container.y = enemyData.y - 50; // Position above enemy
+      
+      // Update health bar
+      healthBar.width = 60 * Math.min(100, window.innerWidth / 1500);
+      healthBar.height = 6 * Math.min(100, window.innerWidth / 1500);
+      healthBarValue.width = (enemiesData[enemyId].health * 0.6 - 2) * Math.min(100, window.innerWidth / 1500);
+      healthBarValue.height = 4 * Math.min(100, window.innerWidth / 1500);
+      usernameText.text = enemyData.username || "Enemy";
+      usernameText.anchor.set(0.5, 0);
+      usernameText.y = 0;
+      // Center health bar
+      healthBar.x = -10;
+      healthBar.y = 120 + (healthBar.height - healthBarValue.height) / 6;
+      healthBarValue.x = -10;
+      healthBarValue.y = 120 + (healthBar.height - healthBarValue.height) / 6;
+    }
+
     if (dev) {
       handleDevEnemyBoundingBox(app, boundingBoxes, enemyData, playerLength);
     }
   }
-}
 
-socket.on("clientUpdateAllEnemies", (enemiesData: any) => {
-  delete enemiesData[socket.id];
-
-  const connectedEnemyIds = Object.keys(enemiesData);
-
-  // clean up old sprites
+  // Clean up dead or disconnected enemies
   for (const enemyId in enemySprites) {
     const enemyData = enemiesData[enemyId];
-
-    // if that id is gone, or if they're dead, remove the sprite
     if (!enemyData || enemyData.health <= 0) {
+      // Remove sprite
       const sprite = enemySprites[enemyId];
       app.stage.removeChild(sprite);
       delete enemySprites[enemyId];
+
+      // Remove UI elements
+      if (enemyUIElements[enemyId]) {
+        const { container } = enemyUIElements[enemyId];
+        enemyUIContainer.removeChild(container);
+        delete enemyUIElements[enemyId];
+      }
+    }
+  }
+}
+
+socket.on("clientUpdateAllEnemies", (enemiesData: Record<string, any>) => {
+  // don’t render yourself
+  delete enemiesData[socket.id];
+  const aliveIds = Object.keys(enemiesData);
+
+  // 1) CLEANUP any bars/text for enemies who left or died
+  for (const id in enemyUI) {
+    const died = !enemiesData[id] || enemiesData[id].health <= 0;
+    if (died) {
+      const { hpBarBg, hpBar, nameText } = enemyUI[id];
+      app.stage.removeChild(hpBarBg, hpBar, nameText);
+      delete enemyUI[id];
+    }
+  }
+
+  for (const id in enemyUIElements) {
+    const died = !enemiesData[id] || enemiesData[id].health <= 0;
+    if (died) {
+      // remove the *container* you added to enemyUIContainer
+      const { container } = enemyUIElements[id];
+      enemyUIContainer.removeChild(container);
+      delete enemyUIElements[id];
+      delete enemySprites[id];
     }
   }
 
@@ -178,7 +272,6 @@ socket.on("clientUpdateNewBullet", (bulletData: any) => {
   bulletSprite.width = bulletData.width;
   bulletSprite.height = bulletData.height;
   app.stage.addChild(bulletSprite);
-  console.log(app.stage.getChildIndex(bulletSprite));
   bulletSprites[bulletData.id] = bulletSprite;
 });
 

@@ -1,4 +1,4 @@
-const bulletSpeed = 1000; // pixels per second
+const bulletSpeed = 2000; // pixels per second
 
 export function checkCollision(aBox, bBox) {
   return (
