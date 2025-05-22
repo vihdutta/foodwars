@@ -84,12 +84,12 @@ jobs:
             sudo systemctl reload nginx
 
             # if existing container, stop and remove it
-            docker stop foodwars-app || true
-            docker rm   foodwars-app || true
+            sudo docker stop foodwars-app || true
+            sudo docker rm   foodwars-app || true
 
             # pull and deploy the new image, binding to localhost
-            docker pull ${{ vars.DOCKERHUB_USERNAME }}/foodwars-app:latest
-            docker run -d \
+            sudo docker pull ${{ vars.DOCKERHUB_USERNAME }}/foodwars-app:latest
+            sudo docker run -d \
               --name foodwars-app \
               -p 127.0.0.1:8080:8080 \
               ${{ vars.DOCKERHUB_USERNAME }}/foodwars-app:latest
