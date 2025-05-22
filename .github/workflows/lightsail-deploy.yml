@@ -60,13 +60,13 @@ jobs:
             }
             EOF
 
-            # Reload nginx
-            sudo nginx -t
-            sudo systemctl reload nginx
-
-            # Replace container
+            # stop and delete container
             sudo docker stop foodwars-app || true
             sudo docker rm foodwars-app || true
+
+            # reload nginx
+            sudo nginx -t
+            sudo systemctl reload nginx
 
             sudo docker pull ${{ vars.DOCKERHUB_USERNAME }}/foodwars-app:latest
             sudo docker run -d \
