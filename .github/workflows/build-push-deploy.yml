@@ -1,26 +1,38 @@
-# vars
-# DOCKERHUB_USERNAME
-# DOMAIN_NAME
-# LIGHTSAIL_PUBLIC_IP
-# LIGHTSAIL_USERNAME
-
-# secrets
-# DOCKERHUB_ACCESS_TOKEN
-# LIGHTSAIL_SSH_KEY (private ssh key)
-
-name: Deploy to AWS Lightsail
+name: Build, Push, Deploy
 
 on:
-  workflow_run:
-    workflows: ["Build & Push Docker Image"]
-    types:
-      - completed
+  push:
+    branches: [ main ]
   workflow_dispatch:
 
 jobs:
-  deploy:
+  build-and-push:
+    name: Build & Push Docker Image
     runs-on: ubuntu-latest
     environment: production
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ vars.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_ACCESS_TOKEN }}
+
+      - name: Build & Push Image
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          push: true
+          tags: ${{ vars.DOCKERHUB_USERNAME }}/foodwars-app:latest
+
+  deploy:
+    name: Deploy to AWS Lightsail
+    runs-on: ubuntu-latest
+    environment: production
+    needs: build-and-push
 
     steps:
       - name: Deploy via SSH to Lightsail
@@ -44,7 +56,7 @@ jobs:
 
                 location = /healthz {
                   return 200 'OK';
-                  add_header Content-Type text/plain;
+                  add_header Content-Type "text/plain";
                 }
 
                 location / {
@@ -63,11 +75,13 @@ jobs:
             # stop and delete container
             sudo docker stop foodwars-app || true
             sudo docker rm foodwars-app || true
+            sudo docker rmi ${{ vars.DOCKERHUB_USERNAME }}/foodwars-app:latest
 
             # reload nginx
             sudo nginx -t
             sudo systemctl reload nginx
 
+            # pull and run new container
             sudo docker pull ${{ vars.DOCKERHUB_USERNAME }}/foodwars-app:latest
             sudo docker run -d \
               --name foodwars-app \
