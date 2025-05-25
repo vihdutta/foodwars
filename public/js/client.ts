@@ -1,35 +1,55 @@
+/**
+ * client.ts - main game client logic
+ * handles rendering, socket communication, and game state management
+ */
+
+// graphics and UI imports
 import {
   background_init,
-  menu_dimmer_init, player_init,
-  coordinates_text_init, fps_text_init,
-  inventory_init, health_bar_init, health_bar_value_init,
-  socket_text_init, notification_init, bullet_count_init, ping_init,
-  wall_count_init, centering_test_init, username_init,
+  menu_dimmer_init, 
+  player_init,
+  coordinates_text_init, 
+  fps_text_init,
+  inventory_init, 
+  health_bar_init, 
+  health_bar_value_init,
+  socket_text_init, 
+  notification_init, 
+  bullet_count_init, 
+  ping_init,
+  wall_count_init, 
+  centering_test_init, 
+  username_init,
   enemy_ui_init
 } from './graphics.js';
-import { handleDevBoundingBox, handleDevBulletBoundingBox, handleDevEnemyBoundingBox, handleDevWallBoundingBox } from './dev.js';
+
+// development and utility imports
+import { 
+  handleDevBoundingBox, 
+  handleDevBulletBoundingBox, 
+  handleDevEnemyBoundingBox, 
+  handleDevWallBoundingBox 
+} from './dev.js';
 import { returnUsername } from './util.js';
-import { mouse, keyboard, handleMouseMove, handleMouseDown, handleMouseUp, handleKeyDown, handleKeyUp } from './movement.js';
+import { 
+  mouse, 
+  keyboard, 
+  handleMouseMove, 
+  handleMouseDown, 
+  handleMouseUp, 
+  handleKeyDown, 
+  handleKeyUp 
+} from './movement.js';
 import { updateCamera } from './camera.js';
 
+// external library declarations
 declare const PIXI: any;
 declare const io: any;
 
-// variable setup
-const Application = PIXI.Application;
-const Sprite = PIXI.Sprite;
-const Assets = PIXI.Assets;
-let dev = false;
-let playing = false;
-let username = " ";
-let UIElements = new PIXI.Container();
-let lastPingSentTime: number = 0;
-const playerLength = 70;
-let widthForHealthBar: number = 0;
-let boundingBoxes: {[key: string]: any} = {};
-const enemyUIElements: {[key: string]: any} = {};
-
+// pixi.js type imports
 import type { Text, Graphics } from 'pixi.js';
+
+// ===== TYPES AND INTERFACES =====
 
 interface EnemyUI {
   nameText: Text;
@@ -37,43 +57,104 @@ interface EnemyUI {
   hpBar: Graphics;
 }
 
-const enemyUI: Record<string, EnemyUI> = {};
-
-// tweak these to taste:
-const ENEMY_BAR_WIDTH   = 50;
-const ENEMY_BAR_HEIGHT  = 5;
-const ENEMY_BAR_Y_OFFSET = 8;
-
-// setup socket
-const { protocol, hostname } = window.location;
-const port = (hostname === 'localhost') ? '8080' : window.location.port; 
-const socketUrl = `${protocol}//${hostname}${port ? `:${port}` : ''}`;
-const socket = io(socketUrl);
-
-function getRoomFromHash(): string {
-  const h = window.location.hash;
-  return h.length > 1 ? h.slice(1) : "0";
+interface EnemyUIElements {
+  container: any;
+  healthBar: any;
+  healthBarValue: any;
+  usernameText: any;
 }
 
-socket.on("connect", () => {
-  console.log("socket", socket.id, "connected");
-  socket.emit("joinRoom", getRoomFromHash());
-})
+// ===== CONSTANTS =====
 
-// init app and gui
-const app = new Application({
+// pixi.js application constants
+const PIXI_CONFIG = {
   width: 500,
   height: 500,
   backgroundAlpha: 1,
   antialias: true,
   resolution: window.devicePixelRatio,
   resizeTo: window,
+} as const;
+
+// game constants (preserve exact math values)
+const GAME_CONSTANTS = {
+  PLAYER_LENGTH: 70,
+  ENEMY_SPRITE_SCALE: 2,
+  ENEMY_ANCHOR: 0.5,
+  ENEMY_POSITION_OFFSET_X: 32 - 4, // preserve exact math
+  ENEMY_POSITION_OFFSET_Y: 32 - 4, // preserve exact math
+  ENEMY_UI_Y_OFFSET: -50,
+  HEALTH_BAR_BASE_WIDTH: 60,
+  HEALTH_BAR_BASE_HEIGHT: 6,
+  HEALTH_BAR_VALUE_MULTIPLIER: 0.6,
+  HEALTH_BAR_VALUE_OFFSET: -2,
+  HEALTH_BAR_VALUE_HEIGHT: 4,
+  HEALTH_BAR_X_OFFSET: -10,
+  HEALTH_BAR_Y_BASE: 120,
+  HEALTH_BAR_Y_DIVISOR: 6,
+  SCREEN_WIDTH_DIVISOR: 1500,
+  SCREEN_SIZE_CLAMP: 100,
+} as const;
+
+// enemy UI bar configuration (preserve original values)
+const ENEMY_BAR_CONFIG = {
+  WIDTH: 50,
+  HEIGHT: 5,
+  Y_OFFSET: 8,
+} as const;
+
+// ===== GLOBAL VARIABLES =====
+
+// pixi.js setup
+const Application = PIXI.Application;
+const Sprite = PIXI.Sprite;
+const Assets = PIXI.Assets;
+
+// game state variables
+let dev = false;
+let playing = false;
+let username = " ";
+let lastPingSentTime: number = 0;
+let widthForHealthBar: number = 0;
+
+// pixi containers and collections
+let UIElements = new PIXI.Container();
+let boundingBoxes: {[key: string]: any} = {};
+const enemyUIElements: {[key: string]: EnemyUIElements} = {};
+const enemyUI: Record<string, EnemyUI> = {};
+const enemySprites: {[key: string]: any} = {};
+
+// ===== SOCKET SETUP =====
+
+/**
+ * extracts room ID from URL hash, defaults to "0"
+ */
+function getRoomFromHash(): string {
+  const hash = window.location.hash;
+  return hash.length > 1 ? hash.slice(1) : "0";
+}
+
+// socket connection configuration
+const { protocol, hostname } = window.location;
+const port = (hostname === 'localhost') ? '8080' : window.location.port; 
+const socketUrl = `${protocol}//${hostname}${port ? `:${port}` : ''}`;
+const socket = io(socketUrl);
+
+// socket connection handler
+socket.on("connect", () => {
+  console.log("🔌 socket", socket.id, "connected");
+  socket.emit("joinRoom", getRoomFromHash());
 });
 
-// Add enemy UI container initialization here
+// ===== PIXI APPLICATION SETUP =====
+
+const app = new Application(PIXI_CONFIG);
+
+// initialize enemy UI container
 const enemyUIContainer = enemy_ui_init();
 app.stage.addChild(enemyUIContainer);
 
+// initialize game world and UI elements
 let wallsData: any = await background_init(app, socket);
 const player = await player_init();
 const dimRectangle = menu_dimmer_init(player);
@@ -90,29 +171,37 @@ const wallCount = wall_count_init();
 const centering_test = centering_test_init();
 const usernameText = username_init();
 
-// EVENT LISTENERS
+// ===== EVENT LISTENERS =====
+
+// input event listeners
 window.addEventListener("keydown", handleKeyDown);
 window.addEventListener("keyup", handleKeyUp);
 window.addEventListener("mousemove", handleMouseMove);
 window.addEventListener('mousedown', handleMouseDown);
-window.addEventListener('mouseup',   handleMouseUp);
+window.addEventListener('mouseup', handleMouseUp);
 
-// PLAYERS
-const enemySprites: {[key: string]: any} = {};
+// ===== ENEMY RENDERING =====
+
+// load enemy texture
 const enemyTexture = await Assets.load("images/enemies.png");
-function renderEnemies(enemiesData: any) {
+
+/**
+ * renders and updates enemy sprites and UI elements
+ */
+function renderEnemies(enemiesData: any): void {
+  // create or update enemy sprites
   for (const enemyId in enemiesData) {
     const enemyData = enemiesData[enemyId];
     
-    // Handle enemy sprite
+    // create new enemy sprite if needed
     if (!enemySprites[enemyId] && enemiesData[enemyId].health > 0) {
       const enemySprite = Sprite.from(enemyTexture);
-      enemySprite.scale.set(2, 2);
-      enemySprite.anchor.set(0.5, 0.5);
+      enemySprite.scale.set(GAME_CONSTANTS.ENEMY_SPRITE_SCALE, GAME_CONSTANTS.ENEMY_SPRITE_SCALE);
+      enemySprite.anchor.set(GAME_CONSTANTS.ENEMY_ANCHOR, GAME_CONSTANTS.ENEMY_ANCHOR);
       app.stage.addChild(enemySprite);
       enemySprites[enemyId] = enemySprite;
 
-      // Initialize UI elements for new enemy
+      // initialize UI elements for new enemy
       if (!enemyUIElements[enemyId]) {
         const container = new PIXI.Container();
         const healthBar = health_bar_init();
@@ -133,49 +222,57 @@ function renderEnemies(enemiesData: any) {
       }
     }
 
+    // update enemy sprite position and rotation
     const enemySprite = enemySprites[enemyId];
-    enemySprite.x = enemyData.x + 32 - 4;
-    enemySprite.y = enemyData.y + 32 - 4;
+    enemySprite.x = enemyData.x + GAME_CONSTANTS.ENEMY_POSITION_OFFSET_X;
+    enemySprite.y = enemyData.y + GAME_CONSTANTS.ENEMY_POSITION_OFFSET_Y;
     enemySprite.rotation = enemyData.rotation;
 
-    // Update UI elements
+    // update enemy UI elements
     if (enemyUIElements[enemyId]) {
       const { container, healthBar, healthBarValue, usernameText } = enemyUIElements[enemyId];
       
-      // Position container relative to enemy
+      // position container relative to enemy
       container.x = enemyData.x;
-      container.y = enemyData.y - 50; // Position above enemy
+      container.y = enemyData.y + GAME_CONSTANTS.ENEMY_UI_Y_OFFSET;
       
-      // Update health bar
-      healthBar.width = 60 * Math.min(100, window.innerWidth / 1500);
-      healthBar.height = 6 * Math.min(100, window.innerWidth / 1500);
-      healthBarValue.width = (enemiesData[enemyId].health * 0.6 - 2) * Math.min(100, window.innerWidth / 1500);
-      healthBarValue.height = 4 * Math.min(100, window.innerWidth / 1500);
+      // calculate responsive scaling factor
+      const scaleFactor = Math.min(GAME_CONSTANTS.SCREEN_SIZE_CLAMP, window.innerWidth / GAME_CONSTANTS.SCREEN_WIDTH_DIVISOR);
+      
+      // update health bar dimensions
+      healthBar.width = GAME_CONSTANTS.HEALTH_BAR_BASE_WIDTH * scaleFactor;
+      healthBar.height = GAME_CONSTANTS.HEALTH_BAR_BASE_HEIGHT * scaleFactor;
+      healthBarValue.width = (enemiesData[enemyId].health * GAME_CONSTANTS.HEALTH_BAR_VALUE_MULTIPLIER + GAME_CONSTANTS.HEALTH_BAR_VALUE_OFFSET) * scaleFactor;
+      healthBarValue.height = GAME_CONSTANTS.HEALTH_BAR_VALUE_HEIGHT * scaleFactor;
+      
+      // update username text
       usernameText.text = enemyData.username || "Enemy";
-      usernameText.anchor.set(0.5, 0);
+      usernameText.anchor.set(GAME_CONSTANTS.ENEMY_ANCHOR, 0);
       usernameText.y = 0;
-      // Center health bar
-      healthBar.x = -10;
-      healthBar.y = 120 + (healthBar.height - healthBarValue.height) / 6;
-      healthBarValue.x = -10;
-      healthBarValue.y = 120 + (healthBar.height - healthBarValue.height) / 6;
+      
+      // position health bar elements
+      healthBar.x = GAME_CONSTANTS.HEALTH_BAR_X_OFFSET;
+      healthBar.y = GAME_CONSTANTS.HEALTH_BAR_Y_BASE + (healthBar.height - healthBarValue.height) / GAME_CONSTANTS.HEALTH_BAR_Y_DIVISOR;
+      healthBarValue.x = GAME_CONSTANTS.HEALTH_BAR_X_OFFSET;
+      healthBarValue.y = GAME_CONSTANTS.HEALTH_BAR_Y_BASE + (healthBar.height - healthBarValue.height) / GAME_CONSTANTS.HEALTH_BAR_Y_DIVISOR;
     }
 
+    // render development bounding boxes if enabled
     if (dev) {
-      handleDevEnemyBoundingBox(app, boundingBoxes, enemyData, playerLength);
+      handleDevEnemyBoundingBox(app, boundingBoxes, enemyData, GAME_CONSTANTS.PLAYER_LENGTH);
     }
   }
 
-  // Clean up dead or disconnected enemies
+  // clean up dead or disconnected enemies
   for (const enemyId in enemySprites) {
     const enemyData = enemiesData[enemyId];
     if (!enemyData || enemyData.health <= 0) {
-      // Remove sprite
+      // remove sprite from stage
       const sprite = enemySprites[enemyId];
       app.stage.removeChild(sprite);
       delete enemySprites[enemyId];
 
-      // Remove UI elements
+      // remove UI elements
       if (enemyUIElements[enemyId]) {
         const { container } = enemyUIElements[enemyId];
         enemyUIContainer.removeChild(container);
@@ -185,12 +282,16 @@ function renderEnemies(enemiesData: any) {
   }
 }
 
-socket.on("clientUpdateAllEnemies", (enemiesData: Record<string, any>) => {
-  // don’t render yourself
-  delete enemiesData[socket.id];
-  const aliveIds = Object.keys(enemiesData);
+// ===== SOCKET EVENT HANDLERS =====
 
-  // 1) CLEANUP any bars/text for enemies who left or died
+/**
+ * handles enemy updates from server
+ */
+socket.on("clientUpdateAllEnemies", (enemiesData: Record<string, any>) => {
+  // exclude self from enemy list
+  delete enemiesData[socket.id];
+
+  // cleanup legacy enemy UI elements
   for (const id in enemyUI) {
     const died = !enemiesData[id] || enemiesData[id].health <= 0;
     if (died) {
@@ -200,10 +301,10 @@ socket.on("clientUpdateAllEnemies", (enemiesData: Record<string, any>) => {
     }
   }
 
+  // cleanup modern enemy UI elements
   for (const id in enemyUIElements) {
     const died = !enemiesData[id] || enemiesData[id].health <= 0;
     if (died) {
-      // remove the *container* you added to enemyUIContainer
       const { container } = enemyUIElements[id];
       enemyUIContainer.removeChild(container);
       delete enemyUIElements[id];
@@ -211,22 +312,31 @@ socket.on("clientUpdateAllEnemies", (enemiesData: Record<string, any>) => {
     }
   }
 
-  // update everyone still in enemiesData
+  // render all current enemies
   renderEnemies(enemiesData);
 });
 
-
+/**
+ * handles player state updates from server
+ */
 socket.on("clientUpdateSelf", (playerData: any) => {
   if (playing) {
+    // update health bar or handle death
     if (playerData.health <= 100 && playerData.health > 0) {
+      // preserve exact math: health * 0.6 - 2
       widthForHealthBar = playerData.health * 0.6 - 2;
     } else {
-      console.log("dead");
+      // handle player death
+      console.log("💀 player died");
       playing = false;
       widthForHealthBar = 0;
+      
+      // remove game elements and show menu
       app.stage.removeChild(player);
       app.stage.removeChild(UIElements);
       app.stage.addChild(dimRectangle);
+      
+      // show main UI and auth section
       const mainUI = document.getElementById("main-ui");
       if (mainUI) {
         mainUI.style.display = "flex";
@@ -236,21 +346,30 @@ socket.on("clientUpdateSelf", (playerData: any) => {
         authSection.style.display = "block";
       }
     }
+    
+    // update player position and rotation (preserve exact math: + 32)
     player.x = playerData.x + 32;
     player.y = playerData.y + 32;
     player.rotation = playerData.rotation;
 
+    // render development bounding boxes if enabled
     if (dev) {
-      handleDevBoundingBox(app, boundingBoxes, playerData, playerLength);
+      handleDevBoundingBox(app, boundingBoxes, playerData, GAME_CONSTANTS.PLAYER_LENGTH);
     }
   }
 });
 
+// ===== GAME LOOP =====
+
+/**
+ * sends player updates to server at 100fps
+ */
 setInterval(() => {
   if (playing) {
     socket.emit("serverUpdateSelf", {
       id: socket.id,
       username: username,
+      // calculate rotation from mouse position (preserve exact math)
       rotation: Math.atan2(
         mouse.y - app.renderer.height / 2,
         mouse.x - app.renderer.width / 2
@@ -261,11 +380,17 @@ setInterval(() => {
   }
 }, 10);
 
-// BULLETS
+// ===== BULLET SYSTEM =====
+
+// bullet sprite collection
 let bulletSprites: {[key: string]: any} = {};
 
+// load bullet texture
 const bulletTexture = await Assets.load("images/bullet.png");
 
+/**
+ * handles new bullet creation from server
+ */
 socket.on("clientUpdateNewBullet", (bulletData: any) => {
   const bulletSprite = Sprite.from(bulletTexture);
   bulletSprite.scale.set(1, 1);
@@ -278,16 +403,24 @@ socket.on("clientUpdateNewBullet", (bulletData: any) => {
   bulletSprites[bulletData.id] = bulletSprite;
 });
 
+/**
+ * handles bullet position updates from server
+ */
 socket.on("clientUpdateAllBullets", (bulletsData: any) => {
   const connectedBulletIds = Object.keys(bulletsData);
   bulletCount.text = "Bullets: " + Object.keys(bulletsData).length;
+  
+  // update existing bullets or remove disconnected ones
   for (const bulletId in bulletSprites) {
     if (!connectedBulletIds.includes(bulletId)) {
+      // remove bullet that no longer exists on server
       const bulletSprite = bulletSprites[bulletId];
       app.stage.removeChild(bulletSprite);
       delete bulletSprites[bulletId];
       continue;
     }
+    
+    // update bullet position and rotation
     const bulletData = bulletsData[bulletId];
     const bulletSprite = bulletSprites[bulletId];
     bulletSprite.x = bulletData.x;
@@ -295,6 +428,7 @@ socket.on("clientUpdateAllBullets", (bulletsData: any) => {
     bulletSprite.rotation = bulletData.rotation;
   }
 
+  // render development bounding boxes for bullets if enabled
   if (dev) {
     Object.keys(bulletsData).forEach((bulletId) => {
       handleDevBulletBoundingBox(app, boundingBoxes, bulletsData, bulletId);
@@ -302,9 +436,14 @@ socket.on("clientUpdateAllBullets", (bulletsData: any) => {
   }
 });
 
-// bounding boxes
+// ===== DEVELOPMENT TOOLS =====
+
+/**
+ * cleanup timer for development bounding boxes
+ */
 setInterval(() => {
   Object.keys(boundingBoxes).forEach((id) => {
+    // preserve exact math: -= 0.01
     boundingBoxes[id].timer -= 0.01;
     if (boundingBoxes[id].timer <= 0) {
       app.stage.removeChild(boundingBoxes[id].box);
@@ -313,35 +452,61 @@ setInterval(() => {
   });
 }, 10);
 
-// notification
+/**
+ * handles kill notifications from server
+ */
 socket.on("notification", (text: string) => {
   notification(text);
 });
 
-// player camera
+// ===== CAMERA SYSTEM =====
+
+// camera configuration (preserve exact math: / 2)
 const camera = {
   x: app.renderer.width / 2,
   y: app.renderer.height / 2,
   scale: 1,
 };
 
+// camera update loop
 app.ticker.add(() => {
-  updateCamera(app, player, widthForHealthBar,
-    camera, UIElements,
-    dimRectangle, coordinatesText,
-    FPSText, socketText, inventory,
-    healthBar, healthBarValue, notificationContainer,
-    bulletCount, pingText, wallCount, usernameText);
+  updateCamera(
+    app, 
+    player, 
+    widthForHealthBar,
+    camera, 
+    UIElements,
+    dimRectangle, 
+    coordinatesText,
+    FPSText, 
+    socketText, 
+    inventory,
+    healthBar, 
+    healthBarValue, 
+    notificationContainer,
+    bulletCount, 
+    pingText, 
+    wallCount, 
+    usernameText
+  );
 });
 
-// when spawn is pressed
-var button = document.getElementById("spawn");
-if (button) {
-  button.addEventListener("click", function () {
+// ===== UI EVENT HANDLERS =====
+
+/**
+ * handles spawn button click to start game
+ */
+const spawnButton = document.getElementById("spawn");
+if (spawnButton) {
+  spawnButton.addEventListener("click", function () {
     playing = true;
+    
+    // add game elements and hide menu
     app.stage.addChild(player);
     app.stage.addChild(UIElements);
     app.stage.removeChild(dimRectangle);
+    
+    // hide main UI and auth section
     const mainUI = document.getElementById("main-ui");
     if (mainUI) {
       mainUI.style.display = "none";
@@ -350,31 +515,41 @@ if (button) {
     if (authSection) {
       authSection.style.display = "none";
     }
+    
+    // get username from input
     username = returnUsername();
   });
 } else {
-  console.error("Button with id 'spawn' not found.");
+  console.error("❌ spawn button not found");
 }
 
-// dev
+/**
+ * handles development mode toggle with backtick key
+ */
 document.addEventListener("keydown", (event) => {
   if (event.key === "`") {
     if (dev) {
-      console.log("Removing bounding boxes");
+      // disable dev mode and cleanup bounding boxes
+      console.log("🔧 removing bounding boxes");
       console.log(boundingBoxes);
       Object.keys(boundingBoxes).forEach((id) => {
         app.stage.removeChild(boundingBoxes[id].box);
         delete boundingBoxes[id];
       });
     } else {
+      // enable dev mode and show wall bounding boxes
       handleDevWallBoundingBox(app, boundingBoxes, wallsData);
     }
     dev = !dev;
-    console.log("Variable toggled:", dev);
+    console.log("🔧 dev mode toggled:", dev);
   }
 });
 
-// PING
+// ===== PING SYSTEM =====
+
+/**
+ * handles ping response from server
+ */
 socket.on("pong", (serverTime: number, clientTime: number) => {
   const now = Date.now();
   const latency = (now - clientTime) / 2;
@@ -383,18 +558,24 @@ socket.on("pong", (serverTime: number, clientTime: number) => {
   return latency;
 });
 
-function sendPing() {
+/**
+ * sends ping to server for latency measurement
+ */
+function sendPing(): void {
   const now = Date.now();
   socket.emit('ping', now);
   lastPingSentTime = now;
 }
 
+// send ping every second
 setInterval(sendPing, 1000);
 
+// ===== CANVAS AND UI SETUP =====
 
-// DISPLAY ON CANVAS
-// document.body.appendChild(app.view as HTMLCanvasElement);
+// add canvas to DOM
 document.body.appendChild(app.view);
+
+// add UI elements to container
 UIElements.addChild(socketText);
 UIElements.addChild(inventory);
 UIElements.addChild(healthBar);
@@ -406,20 +587,27 @@ UIElements.addChild(pingText);
 UIElements.addChild(wallCount);
 UIElements.addChild(centering_test);
 UIElements.addChild(usernameText);
+
+// add containers to stage
 app.stage.addChild(notificationContainer);
 app.stage.addChild(dimRectangle);
 
-
-function layoutUI() {
+/**
+ * handles UI layout on window resize
+ */
+function layoutUI(): void {
   const w = app.screen.width;
   const h = app.screen.height;
-  const pad = 0.02;
+  const pad = 0.02; // preserve exact math
 
+  // position centering test element (preserve exact math)
   centering_test.position.set(
     w * pad,
     h * (1 - pad) - centering_test.height
   );
 }
+
+// initial layout and resize listener
 layoutUI();
 window.addEventListener("resize", layoutUI);
 
