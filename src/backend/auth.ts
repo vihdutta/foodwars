@@ -56,7 +56,7 @@ export function setupAuth(app: Express): void {
       {
         clientID: process.env.GOOGLE_CLIENT_ID,
         clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-        callbackURL: "http://foodwars.vihdutta.com" + AUTH_ROUTES.GOOGLE_CALLBACK,
+        callbackURL: "https://foodwars.vihdutta.com" + AUTH_ROUTES.GOOGLE_CALLBACK,
       },
       function (accessToken, refreshToken, profile, done) {
         // todo: implement user lookup/creation in database
