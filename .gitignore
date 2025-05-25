@@ -4,3 +4,5 @@ dist
 *.js.map
 *.secret
 .vscode
+.env.*
+.env

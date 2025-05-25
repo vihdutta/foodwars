@@ -12,7 +12,28 @@
 
 <body>
   <div class="container-fluid">
-    <div class="row justify-content-center align-items-center" style="min-height: 100vh;">
+    <!-- Authentication Section -->
+    <div class="row justify-content-end p-3">
+      <div class="col-auto">
+        <!-- Login Section (shown when not authenticated) -->
+        <div id="login-section" class="translucent-container p-2" style="display: none;">
+          <button id="google-login-btn" class="btn btn-primary btn-sm">
+            Login with Google
+          </button>
+        </div>
+        
+        <!-- User Section (shown when authenticated) -->
+        <div id="user-section" class="translucent-container p-2 d-flex align-items-center" style="display: none;">
+          <img id="user-avatar" src="" alt="User Avatar" class="rounded-circle mr-2" style="width: 32px; height: 32px; display: none;">
+          <span id="user-name" class="text-white mr-2">User</span>
+          <button id="logout-btn" class="btn btn-secondary btn-sm">
+            Logout
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="row justify-content-center align-items-center" style="min-height: 80vh;">
       <!-- Username & Play -->
       <div class="col-md-4">
         <div class="translucent-container p-3">
@@ -44,12 +65,12 @@
           </button>
         </div>
       </div>
-
     </div>
   </div>
 
   <script src="/socket.io/socket.io.js"></script>
   <script src="/pixi/pixi.min.js"></script>
+  <script src="/js/auth.js"></script>
   <script type="module" src="/js/client.js"></script>
 </body>
 </html>

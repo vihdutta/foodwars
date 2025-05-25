@@ -1,4 +1,6 @@
 // server.ts
+import dotenv from "dotenv";
+dotenv.config();
 
 import express from "express";
 import { createServer } from "http";
@@ -11,6 +13,7 @@ import {
   updateBulletPosition,
 } from "./backend/physics.js";
 import { bestSpawnPoint } from "./backend/spawn.js";
+import { setupAuth } from "./backend/auth.js";
 
 interface GameState {
   players: Record<string, any>;
@@ -34,6 +37,10 @@ function getGame(roomId: string): GameState {
 }
 
 const app = express();
+
+// Setup authentication
+setupAuth(app);
+
 const server = createServer(app);
 const io = new Server(server);
 
