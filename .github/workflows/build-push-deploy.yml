@@ -48,6 +48,13 @@ jobs:
 
             DOMAIN_NAME="${{ vars.DOMAIN_NAME }}"
 
+            # Create .env file
+            cat > /home/${{ vars.LIGHTSAIL_USERNAME }}/.env << EOF
+            GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}
+            GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}
+            # Add any other environment variables you need
+            EOF
+
             # Write reverse-proxy config
             sudo tee /etc/nginx/conf.d/${DOMAIN_NAME}.conf > /dev/null << EOF
             server {
@@ -79,11 +86,10 @@ jobs:
 
             # reload nginx
             sudo nginx -t
-            sudo systemctl reload nginx
-
-            # pull and run new container
+            sudo systemctl reload nginx            # pull and run new container
             sudo docker pull ${{ vars.DOCKERHUB_USERNAME }}/foodwars-app:latest
             sudo docker run -d \
               --name foodwars-app \
+              --env-file /home/${{ vars.LIGHTSAIL_USERNAME }}/.env \
               -p 127.0.0.1:8080:8080 \
               ${{ vars.DOCKERHUB_USERNAME }}/foodwars-app:latest

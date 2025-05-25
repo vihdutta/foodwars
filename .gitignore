@@ -1,8 +1,8 @@
 node_modules/
+.vscode
 dist
 *.js
 *.js.map
 *.secret
-.vscode
 .env.*
 .env

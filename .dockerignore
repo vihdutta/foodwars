@@ -1,6 +1,14 @@
-node_modules
-*.secret
-.vscode/
+# same as git ignore
+node_modules/
+.vscode
 dist
+*.js
+*.js.map
+*.secret
+.vscode
+.env.*
+.env
+
+# docker specific
 .git
 Dockerfile*

@@ -3,69 +3,190 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link href="/style.css" rel="stylesheet" type="text/css">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.3.1/dist/css/bootstrap.min.css"
-        integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T"
-        crossorigin="anonymous">
-  <title>Game</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            'chef': ['Fredoka One', 'cursive'],
+            'game': ['Orbitron', 'monospace']
+          },
+          colors: {
+            'chef-orange': '#FF6B35',
+            'chef-red': '#D32F2F',
+            'chef-yellow': '#FFD54F',
+            'chef-green': '#4CAF50'
+          }
+        }
+      }
+    }
+  </script>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka+One:wght@400&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <title>Food Wars - Chef Battle Arena</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Orbitron', monospace;
+    }
+    
+    canvas {
+      width: 100%;
+      height: 100%;
+    }
+    
+    .glass-effect {
+      backdrop-filter: blur(10px);
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+    
+    .chef-glow {
+      box-shadow: 0 0 20px rgba(255, 107, 53, 0.3);
+    }
+    
+    .pulse-chef {
+      animation: pulse-chef 2s infinite;
+    }
+    
+    @keyframes pulse-chef {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+    }
+    
+    .slide-in {
+      animation: slideIn 0.5s ease-out;
+    }
+    
+    @keyframes slideIn {
+      from { transform: translateY(-20px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+  </style>
 </head>
 
-<body>
-  <div class="container-fluid">
+
+
+  <body class="bg-gradient-to-br from-orange-900/20 to-red-900/20 min-h-screen">
     <!-- Authentication Section -->
-    <div class="row justify-content-end p-3">
-      <div class="col-auto">
-        <!-- Login Section (shown when not authenticated) -->
-        <div id="login-section" class="translucent-container p-2" style="display: none;">
-          <button id="google-login-btn" class="btn btn-primary btn-sm">
-            Login with Google
-          </button>
-        </div>
-        
-        <!-- User Section (shown when authenticated) -->
-        <div id="user-section" class="translucent-container p-2 d-flex align-items-center" style="display: none;">
-          <img id="user-avatar" src="" alt="User Avatar" class="rounded-circle mr-2" style="width: 32px; height: 32px; display: none;">
-          <span id="user-name" class="text-white mr-2">User</span>
-          <button id="logout-btn" class="btn btn-secondary btn-sm">
-            Logout
-          </button>
-        </div>
+    <div id="auth-section" class="fixed top-4 right-4 z-50">
+      <!-- Login Section (shown when not authenticated) -->
+      <div id="login-section" class="glass-effect rounded-xl p-4 slide-in" style="display: none;">
+        <button id="google-login-btn" class="bg-gradient-to-r from-chef-orange to-chef-red text-white px-6 py-2 rounded-lg font-semibold hover:shadow-lg transition-all duration-300 flex items-center gap-2">
+          <i class="fab fa-google"></i>
+          Login with Google
+        </button>
+      </div>
+      
+      <!-- User Section (shown when authenticated) -->
+      <div id="user-section" class="glass-effect rounded-xl p-4 flex items-center gap-3 slide-in" style="display: none;">
+        <img id="user-avatar" src="" alt="Chef Avatar" class="w-10 h-10 rounded-full border-2 border-chef-yellow" style="display: none;">
+        <span id="user-name" class="text-white font-semibold">Chef</span>
+        <button id="logout-btn" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg text-sm transition-all duration-300">
+          <i class="fas fa-sign-out-alt mr-1"></i>
+          Logout
+        </button>
       </div>
     </div>
 
-    <div class="row justify-content-center align-items-center" style="min-height: 80vh;">
-      <!-- Username & Play -->
-      <div class="col-md-4">
-        <div class="translucent-container p-3">
+    <!-- Main Game Interface -->
+    <div id="main-ui" class="fixed inset-0 flex items-center justify-center z-40 pointer-events-none">
+    <div class="pointer-events-auto">
+      <!-- Game Title -->
+      <div class="text-center mb-8">
+        <h1 class="font-chef text-6xl md:text-8xl text-white mb-2 drop-shadow-2xl">
+          <span class="text-chef-orange">FOOD</span>
+          <span class="text-chef-red">WARS</span>
+        </h1>
+        <p class="text-chef-yellow text-xl md:text-2xl font-game tracking-wider drop-shadow-lg">
+          🍳 CHEF BATTLE ARENA 🍳
+        </p>
+      </div>
+
+      <!-- Main Game Panel -->
+      <div class="glass-effect rounded-2xl p-8 chef-glow max-w-md mx-auto">
+        <!-- Chef Setup Section -->
+        <div class="mb-6">
+          <div class="flex items-center justify-center mb-4">
+            <div class="bg-gradient-to-r from-chef-yellow to-chef-orange p-3 rounded-full">
+              <i class="fas fa-chef-hat text-white text-2xl"></i>
+            </div>
+          </div>
+          
+          <label class="block text-chef-yellow font-semibold mb-2 text-center">
+            👨‍🍳 Chef Name
+          </label>
           <input type="text"
-                 class="form-control mb-2"
+                 class="w-full bg-white/20 border-2 border-chef-yellow/50 rounded-xl px-4 py-3 text-white placeholder-white/70 focus:border-chef-yellow focus:outline-none focus:ring-2 focus:ring-chef-yellow/30 transition-all duration-300 text-center font-game"
                  id="username"
                  maxlength="12"
-                 placeholder="Enter name here">
-          <button id="spawn"
-                  class="btn btn-primary custom-element btn-block w-100">
-            Play
-          </button>
+                 placeholder="Enter your chef name">
+        </div>
+
+        <!-- Play Button -->
+        <button id="spawn"
+                class="w-full bg-gradient-to-r from-chef-green to-emerald-600 hover:from-chef-green/90 hover:to-emerald-600/90 text-white font-bold py-4 px-6 rounded-xl text-xl transition-all duration-300 transform hover:scale-105 pulse-chef mb-6 shadow-lg">
+          <i class="fas fa-play mr-2"></i>
+          START COOKING!
+        </button>
+
+        <!-- Room Join Section -->
+        <div class="border-t border-white/20 pt-6">
+          <div class="flex items-center justify-center mb-3">
+            <i class="fas fa-users text-chef-yellow mr-2"></i>
+            <span class="text-white font-semibold">Join Kitchen</span>
+          </div>
+          
+          <div class="flex gap-2">
+            <input type="text"
+                   id="roomIdInput"
+                   class="flex-1 bg-white/20 border-2 border-white/30 rounded-lg px-3 py-2 text-white placeholder-white/70 focus:border-chef-yellow focus:outline-none text-center font-game text-sm"
+                   maxlength="8"
+                   placeholder="Room ID">
+            
+            <button id="joinRoomBtn"
+                    class="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white px-4 py-2 rounded-lg font-semibold transition-all duration-300 flex items-center gap-1">
+              <i class="fas fa-door-open text-sm"></i>
+              Join
+            </button>
+          </div>
         </div>
       </div>
 
-      <!-- Room ID input and Join button -->
-      <div class="col-auto">
-        <div class="translucent-container p-2">
-          <input type="text"
-                id="roomIdInput"
-                class="form-control form-control-sm mb-2"
-                maxlength="8"
-                placeholder="Room ID"
-                style="width: 100px;">
-
-          <button id="joinRoomBtn"
-                  class="btn btn-secondary btn-sm w-100">
-            Join Room
-          </button>
+      <!-- Game Stats/Info Panel -->
+      <div class="mt-6 flex justify-center gap-4">
+        <div class="glass-effect rounded-xl p-3 text-center">
+          <i class="fas fa-trophy text-chef-yellow text-lg mb-1"></i>
+          <div class="text-white text-sm font-semibold">Battles Won</div>
+          <div class="text-chef-yellow font-bold">0</div>
+        </div>
+        
+        <div class="glass-effect rounded-xl p-3 text-center">
+          <i class="fas fa-fire text-chef-red text-lg mb-1"></i>
+          <div class="text-white text-sm font-semibold">Heat Level</div>
+          <div class="text-chef-red font-bold">🌶️</div>
+        </div>
+        
+        <div class="glass-effect rounded-xl p-3 text-center">
+          <i class="fas fa-star text-chef-yellow text-lg mb-1"></i>
+          <div class="text-white text-sm font-semibold">Chef Rating</div>
+          <div class="text-chef-yellow font-bold">⭐⭐⭐</div>
         </div>
       </div>
     </div>
+    <!-- Game Instructions (Bottom) -->
+    <div class="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-30">
+      <div class="glass-effect rounded-xl p-4 text-center max-w-lg">
+        <div class="text-white text-sm">
+          <span class="text-chef-yellow font-semibold">🎮 Controls:</span>
+          <span class="mx-2">WASD to move</span>
+          <span class="mx-2">🍳 Collect ingredients</span>
+          <span class="mx-2">⚔️ Battle other chefs</span>
+        </div>
+      </div>
+    </div>
+  
   </div>
 
   <script src="/socket.io/socket.io.js"></script>

@@ -227,10 +227,13 @@ socket.on("clientUpdateSelf", (playerData: any) => {
       app.stage.removeChild(player);
       app.stage.removeChild(UIElements);
       app.stage.addChild(dimRectangle);
-      var elements = document.getElementsByClassName("container-fluid");
-      for (var i = 0; i < elements.length; i++) {
-        var element = elements[i] as HTMLElement;
-        element.style.display = "block";
+      const mainUI = document.getElementById("main-ui");
+      if (mainUI) {
+        mainUI.style.display = "flex";
+      }
+      const authSection = document.getElementById("auth-section");
+      if (authSection) {
+        authSection.style.display = "block";
       }
     }
     player.x = playerData.x + 32;
@@ -339,10 +342,13 @@ if (button) {
     app.stage.addChild(player);
     app.stage.addChild(UIElements);
     app.stage.removeChild(dimRectangle);
-    var elements = document.getElementsByClassName("container-fluid");
-    for (var i = 0; i < elements.length; i++) {
-      var element = elements[i] as HTMLElement;
-      element.style.display = "none";
+    const mainUI = document.getElementById("main-ui");
+    if (mainUI) {
+      mainUI.style.display = "none";
+    }
+    const authSection = document.getElementById("auth-section");
+    if (authSection) {
+      authSection.style.display = "none";
     }
     username = returnUsername();
   });
