@@ -37,8 +37,8 @@ function getGame(roomId: string): GameState {
 }
 
 const app = express();
-
-// Setup authentication
+app.use(express.static("public"));
+app.use("/pixi", express.static("./node_modules/pixi.js/dist/"));
 setupAuth(app);
 
 const server = createServer(app);
@@ -180,6 +180,4 @@ setInterval(() => {
 }, 1000);
 
 const PORT = process.env.PORT || 8080;
-app.use(express.static("public"));
-app.use("/pixi", express.static("./node_modules/pixi.js/dist/"));
 server.listen(PORT, () => console.log(`Server listening on ${PORT}`));
