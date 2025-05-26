@@ -172,4 +172,70 @@ export function formatTime(seconds: number): string {
   const minutes = Math.floor(seconds / 60);
   const remainingSeconds = seconds % 60;
   return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+}
+
+// ===== COMPREHENSIVE GAME STATS =====
+
+/**
+ * updates comprehensive game stats when a shot is fired
+ */
+export function updateGameStatsShotFired(gameStats: Record<string, PlayerStats & { username: string; socketId: string }>, playerId: string): void {
+  if (gameStats[playerId]) {
+    gameStats[playerId].shotsFired++;
+  }
+}
+
+/**
+ * updates comprehensive game stats when a shot hits
+ */
+export function updateGameStatsShotHit(gameStats: Record<string, PlayerStats & { username: string; socketId: string }>, playerId: string, damage: number): void {
+  if (gameStats[playerId]) {
+    gameStats[playerId].shotsHit++;
+    gameStats[playerId].damageDealt += damage;
+  }
+}
+
+/**
+ * updates comprehensive game stats when a kill occurs
+ */
+export function updateGameStatsKill(gameStats: Record<string, PlayerStats & { username: string; socketId: string }>, killerId: string): void {
+  if (gameStats[killerId]) {
+    gameStats[killerId].kills++;
+  }
+}
+
+/**
+ * updates comprehensive game stats when a death occurs
+ */
+export function updateGameStatsDeath(gameStats: Record<string, PlayerStats & { username: string; socketId: string }>, victimId: string): void {
+  if (gameStats[victimId]) {
+    gameStats[victimId].deaths++;
+  }
+}
+
+/**
+ * updates comprehensive game stats with time survived when a player dies
+ */
+export function updateGameStatsTimeAlive(gameStats: Record<string, PlayerStats & { username: string; socketId: string }>, playerId: string, timeAliveThisLife: number): void {
+  if (gameStats[playerId]) {
+    gameStats[playerId].timeAlive += timeAliveThisLife;
+  }
+}
+
+/**
+ * calculates final time alive for all players when game ends
+ */
+export function calculateFinalTimeAlive(
+  gameStats: Record<string, PlayerStats & { username: string; socketId: string }>,
+  players: Record<string, ServerPlayer>,
+  gameStartTime: number,
+  gameEndTime: number
+): void {
+  // Add remaining time alive for players who are still alive when game ends
+  Object.values(players).forEach(player => {
+    if (player.health > 0 && gameStats[player.id]) {
+      const timeAliveThisLife = Math.floor((gameEndTime - player.sessionStartTime) / 1000);
+      gameStats[player.id].timeAlive += timeAliveThisLife;
+    }
+  });
 } 

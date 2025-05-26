@@ -259,15 +259,24 @@ export function username_init(username: string = "") {
         stroke: "000000",
         strokeThickness: 4
     });
-    
-    setInterval(() => {
-        const userInput = document.getElementById("username") as HTMLInputElement;
-        if (userInput && userInput.value) {
-            usernameText.text = userInput.value.slice(0, 12);
-        }
-    }, 100);
-    
+    usernameText.x = 0;
+    usernameText.y = 0;
     return usernameText;
+}
+
+export function timer_init() {
+    const timerText = new PIXI.Text("5:00", {
+        fontFamily: "Arial",
+        fontSize: 36,
+        fill: "ffffff",
+        stroke: "000000",
+        strokeThickness: 4,
+        fontWeight: "bold"
+    });
+    timerText.x = 0;
+    timerText.y = 0;
+    timerText.anchor.set(0.5, 0); // Center horizontally
+    return timerText;
 }
 
 export function enemy_ui_init() {

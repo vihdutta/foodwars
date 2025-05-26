@@ -9,14 +9,15 @@ import type { DeathInfo, PlayerStats } from './types.js';
 // Constants imports
 import { RESPAWN_COUNTDOWN_SECONDS } from './constants.js';
 
+// Countdown utility imports
+import { startCountdown, stopCountdown, stopAllCountdowns, createCountdownElement } from './countdown-timer.js';
+
 // Styling imports
 import { applyGlassEffect, applyBackgroundDim, showMenuDimmer, hideMenuDimmer } from './styling.js';
 
 // ===== DEATH SCREEN MANAGEMENT =====
 
-let respawnCountdown: number = 0;
-let countdownInterval: NodeJS.Timeout | null = null;
-let autoRespawnTimeout: NodeJS.Timeout | null = null;
+// Auto-return timer removed - not needed since auto-respawn is faster
 
 /**
  * creates and shows the death screen with stats and respawn options
@@ -42,8 +43,14 @@ export function showDeathScreen(deathInfo: DeathInfo): void {
   // add to body
   document.body.appendChild(deathScreen);
   
-  // start respawn countdown
-  startRespawnCountdown();
+  // start respawn countdown using new utility
+  startCountdown({
+    elementId: "countdown-timer",
+    prefixText: "Auto-respawn in ",
+    suffixText: " seconds",
+    initialSeconds: RESPAWN_COUNTDOWN_SECONDS,
+    onComplete: handleRespawn
+  });
 }
 
 /**
@@ -59,15 +66,16 @@ export function hideDeathScreen(): void {
   hideMenuDimmer();
   
   // cleanup timers
-  if (countdownInterval) {
-    clearInterval(countdownInterval);
-    countdownInterval = null;
-  }
-  
-  if (autoRespawnTimeout) {
-    clearTimeout(autoRespawnTimeout);
-    autoRespawnTimeout = null;
-  }
+  stopCountdown("countdown-timer");
+}
+
+/**
+ * forces the death screen to close (used when game ends)
+ */
+export function forceCloseDeathScreen(): void {
+  console.log("🏁 Force closing death screen due to game end");
+  stopAllCountdowns(); // Stop all active countdowns when game ends
+  hideDeathScreen();
 }
 
 /**
@@ -157,8 +165,8 @@ function createDeathScreenContent(deathInfo: DeathInfo): HTMLElement {
         🍳 Return to Kitchen
       </button>
       
-      <div class="text-orange-200 text-sm">
-        Auto-respawn in <span id="countdown-timer" class="font-bold text-white">15</span> seconds
+      <div id="countdown-timer" class="text-orange-200 text-sm">
+        Auto-respawn in <span class="font-bold text-white">30</span> seconds
       </div>
       
       <button 
@@ -192,35 +200,7 @@ function setupDeathScreenEventListeners(content: HTMLElement): void {
   }
 }
 
-/**
- * starts the respawn countdown timer
- */
-function startRespawnCountdown(): void {
-  respawnCountdown = RESPAWN_COUNTDOWN_SECONDS;
-  
-  // update countdown display immediately
-  updateCountdownDisplay();
-  
-  // start countdown interval
-  countdownInterval = setInterval(() => {
-    respawnCountdown--;
-    updateCountdownDisplay();
-    
-    if (respawnCountdown <= 0) {
-      handleRespawn();
-    }
-  }, 1000);
-}
-
-/**
- * updates the countdown display
- */
-function updateCountdownDisplay(): void {
-  const countdownElement = document.getElementById("countdown-timer");
-  if (countdownElement) {
-    countdownElement.textContent = respawnCountdown.toString();
-  }
-}
+// Auto-return timer function removed - not needed since auto-respawn is faster
 
 /**
  * handles respawn button click

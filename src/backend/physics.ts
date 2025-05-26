@@ -21,6 +21,10 @@ import {
   recordDeath,
   sendDeathScreen,
   broadcastKillNotification,
+  updateGameStatsShotHit,
+  updateGameStatsKill,
+  updateGameStatsDeath,
+  updateGameStatsTimeAlive,
 } from "./stats.js";
 
 // ===== CONSTANTS =====
@@ -124,7 +128,8 @@ export function bulletPlayerCollisions(
   bullets: Record<string, BulletData>,
   players: Record<string, ServerPlayer>,
   clientInput: ClientPlayerInput,
-  playerBounds: PlayerBounds
+  playerBounds: PlayerBounds,
+  gameStats: Record<string, any>
 ): void {
   const currentPlayer = players[clientInput.id];
   if (!currentPlayer) return;
@@ -140,6 +145,7 @@ export function bulletPlayerCollisions(
         // record hit for shooter stats
         if (shooter) {
           recordShotHit(shooter, BULLET_DAMAGE);
+          updateGameStatsShotHit(gameStats, bullet.parent_id, BULLET_DAMAGE);
         }
         
         // apply damage to player
@@ -155,7 +161,14 @@ export function bulletPlayerCollisions(
           // record kill and death stats
           if (shooter) {
             recordKill(shooter);
+            updateGameStatsKill(gameStats, bullet.parent_id);
           }
+          updateGameStatsDeath(gameStats, clientInput.id);
+          
+          // calculate and record time alive for this life
+          const timeAliveThisLife = Math.floor((Date.now() - currentPlayer.sessionStartTime) / 1000);
+          updateGameStatsTimeAlive(gameStats, clientInput.id, timeAliveThisLife);
+          
           const deathInfo = recordDeath(currentPlayer, bullet.parent_username);
           
           // send death screen to victim

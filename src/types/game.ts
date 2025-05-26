@@ -96,6 +96,10 @@ export interface GameState {
   bullets: Record<string, BulletData>;
   walls: Record<string, WallData>;
   lastPlayersShotTime: Record<string, number>;
+  gameStartTime?: number; // timestamp when the first player spawned
+  gameEndTime?: number; // timestamp when the game ended
+  gameEnded: boolean; // whether the game has ended
+  gameStats: Record<string, PlayerStats & { username: string; socketId: string }>; // comprehensive stats by socket ID
 }
 
 // ===== WALL TYPES =====

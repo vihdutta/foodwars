@@ -21,3 +21,9 @@ export const GLASS_BORDER_OPACITY = 'rgba(255, 255, 255, 0.2)';
 
 // death screen auto-respawn countdown in seconds
 export const RESPAWN_COUNTDOWN_SECONDS = 30; 
+
+// game ended screen auto-return to menu timeout in seconds
+export const GAME_ENDED_AUTO_RETURN_SECONDS = 30;
+
+// game duration in seconds (should match server GAME_DURATION_MINUTES * 60)
+export const GAME_DURATION_SECONDS = 5 * 60;

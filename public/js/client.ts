@@ -20,6 +20,7 @@ import {
   wall_count_init, 
   centering_test_init, 
   username_init,
+  timer_init,
   enemy_ui_init
 } from './graphics.js';
 
@@ -53,7 +54,7 @@ import type { Text, Graphics } from 'pixi.js';
 import type { WallData, DeathInfo, PlayerStats } from './types.js';
 
 // death screen imports
-import { showDeathScreen, hideDeathScreen } from './death-screen.js';
+import { showDeathScreen, hideDeathScreen, forceCloseDeathScreen } from './death-screen.js';
 
 // styling imports
 import { showMenuDimmer, hideMenuDimmer } from './styling.js';
@@ -179,6 +180,7 @@ const pingText = ping_init();
 const wallCount = wall_count_init();
 const centering_test = centering_test_init();
 const usernameText = username_init();
+const timerText = timer_init();
 
 // ===== EVENT LISTENERS =====
 
@@ -487,6 +489,54 @@ socket.on("killFeed", (data: { killer: string; victim: string; weapon: string; k
   // kill feed can be used for displaying recent kills
 });
 
+/**
+ * handles timer updates from server
+ */
+socket.on("timerUpdate", (data: { remainingTime: number }) => {
+  const minutes = Math.floor(data.remainingTime / 60);
+  const seconds = Math.floor(data.remainingTime % 60);
+  timerText.text = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+});
+
+/**
+ * handles game ended event from server
+ */
+socket.on("gameEnded", (data: { finalStats: Array<{ username: string; stats: PlayerStats }> }) => {
+  console.log("🏁 game ended", data);
+  playing = false;
+  
+  // force close death screen if it's open
+  forceCloseDeathScreen();
+  
+  // remove game elements
+  if (app.stage.children.includes(player)) {
+    app.stage.removeChild(player);
+  }
+  if (app.stage.children.includes(UIElements)) {
+    app.stage.removeChild(UIElements);
+  }
+  
+  // show menu dimmer
+  showMenuDimmer();
+  
+  // import and show game ended screen
+  import('./game-ended.js').then(({ showGameEndedScreen }) => {
+    // find current player's stats from the final stats (now by socket ID)
+    const currentPlayerStats = data.finalStats.find((p: any) => p.socketId === socket.id);
+    const playerStats = currentPlayerStats || {
+      kills: 0,
+      deaths: 0,
+      damageDealt: 0,
+      shotsFired: 0,
+      shotsHit: 0,
+      timeAlive: 0,
+      gamesPlayed: 0
+    };
+    
+    showGameEndedScreen(playerStats, data.finalStats);
+  });
+});
+
 // ===== CAMERA SYSTEM =====
 
 // camera configuration (preserve exact math: / 2)
@@ -515,7 +565,8 @@ app.ticker.add(() => {
     bulletCount, 
     pingText, 
     wallCount, 
-    usernameText
+    usernameText,
+    timerText
   );
 });
 
@@ -531,6 +582,12 @@ if (spawnButton) {
     
     // hide death screen if it's showing
     hideDeathScreen();
+    
+    // hide game-ended screen if it's showing
+    const gameEndedScreen = document.getElementById("game-ended-screen");
+    if (gameEndedScreen) {
+      document.body.removeChild(gameEndedScreen);
+    }
     
     // add game elements and hide menu
     app.stage.addChild(player);
@@ -620,6 +677,7 @@ UIElements.addChild(pingText);
 UIElements.addChild(wallCount);
 UIElements.addChild(centering_test);
 UIElements.addChild(usernameText);
+UIElements.addChild(timerText);
 
 // add containers to stage
 app.stage.addChild(notificationContainer);
