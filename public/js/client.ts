@@ -523,7 +523,10 @@ socket.on("gameEnded", (data: { finalStats: Array<{ username: string; stats: Pla
   import('./game-ended.js').then(({ showGameEndedScreen }) => {
     // find current player's stats from the final stats (now by socket ID)
     const currentPlayerStats = data.finalStats.find((p: any) => p.socketId === socket.id);
-    const playerStats = currentPlayerStats || {
+    
+    // Extract PlayerStats from the data structure (handle nested stats)
+    const playerStats: PlayerStats = currentPlayerStats ? 
+      (currentPlayerStats.stats || currentPlayerStats) as PlayerStats : {
       kills: 0,
       deaths: 0,
       damageDealt: 0,
@@ -533,7 +536,7 @@ socket.on("gameEnded", (data: { finalStats: Array<{ username: string; stats: Pla
       gamesPlayed: 0
     };
     
-    showGameEndedScreen(playerStats, data.finalStats);
+    showGameEndedScreen(playerStats, data.finalStats as any);
   });
 });
 
