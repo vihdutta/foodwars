@@ -20,33 +20,26 @@ import {
 } from "./backend/physics.js";
 import { bestSpawnPoint } from "./backend/spawn.js";
 import { setupAuth } from "./backend/auth.js";
+import {
+  createPlayerWithStats,
+  recordShotFired,
+  recordShotHit,
+  recordKill,
+  recordDeath,
+  sendDeathScreen,
+  broadcastKillNotification,
+} from "./backend/stats.js";
 
-// ===== TYPES AND INTERFACES =====
-
-interface GameState {
-  players: Record<string, any>;
-  bullets: Record<string, any>;
-  walls: Record<string, any>;
-  lastPlayersShotTime: Record<string, number>;
-}
-
-interface PlayerBounds {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-}
-
-interface BulletData {
-  id: string;
-  parent_id: string;
-  parent_username: string;
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-  rotation: number;
-}
+// Type imports
+import type {
+  ServerPlayer,
+  ClientPlayerInput,
+  GameState,
+  PlayerBounds,
+  BulletData,
+  WallData,
+  RoomEmitter
+} from "./types/game.js";
 
 // ===== CONSTANTS =====
 
@@ -71,7 +64,7 @@ const PORT = process.env.PORT || 8080;
 const games: Record<string, GameState> = {};
 
 /**
- * Gets or creates a game state for the specified room
+ * gets or creates a game state for the specified room
  */
 function getGame(roomId: string): GameState {
   if (!games[roomId]) {
@@ -86,30 +79,31 @@ function getGame(roomId: string): GameState {
 }
 
 /**
- * Creates player bounds object for collision detection
+ * creates player bounds object for collision detection (optimized to reuse object)
  */
-function createPlayerBounds(player: any): PlayerBounds {
-  return {
-    x: player.x,
-    y: player.y,
-    width: GAME_CONFIG.PLAYER_SIZE,
-    height: GAME_CONFIG.PLAYER_SIZE,
-  };
+const reusableBounds: PlayerBounds = { x: 0, y: 0, width: 0, height: 0 };
+
+function updatePlayerBounds(serverPlayer: ServerPlayer): PlayerBounds {
+  reusableBounds.x = serverPlayer.x;
+  reusableBounds.y = serverPlayer.y;
+  reusableBounds.width = GAME_CONFIG.PLAYER_SIZE;
+  reusableBounds.height = GAME_CONFIG.PLAYER_SIZE;
+  return reusableBounds;
 }
 
 /**
- * Creates a new bullet object
+ * creates a new bullet object
  */
-function createBullet(player: any, playerData: any): BulletData {
-  const bulletAngle = playerData.rotation - Math.PI / 2;
+function createBullet(serverPlayer: ServerPlayer, clientInput: ClientPlayerInput): BulletData {
+  const bulletAngle = clientInput.rotation - Math.PI / 2;
   const spread = (Math.random() - 0.5) * GAME_CONFIG.BULLET_SPREAD;
   
   return {
     id: crypto.randomUUID(),
-    parent_id: playerData.id,
-    parent_username: playerData.username,
-    x: player.x + GAME_CONFIG.PLAYER_SIZE / 2 + Math.cos(bulletAngle) * GAME_CONFIG.BULLET_OFFSET,
-    y: player.y + GAME_CONFIG.PLAYER_SIZE / 2 + Math.sin(bulletAngle) * GAME_CONFIG.BULLET_OFFSET,
+    parent_id: clientInput.id,
+    parent_username: clientInput.username,
+    x: serverPlayer.x + GAME_CONFIG.PLAYER_SIZE / 2 + Math.cos(bulletAngle) * GAME_CONFIG.BULLET_OFFSET,
+    y: serverPlayer.y + GAME_CONFIG.PLAYER_SIZE / 2 + Math.sin(bulletAngle) * GAME_CONFIG.BULLET_OFFSET,
     width: GAME_CONFIG.BULLET_WIDTH,
     height: GAME_CONFIG.BULLET_HEIGHT,
     rotation: bulletAngle - spread,
@@ -117,37 +111,45 @@ function createBullet(player: any, playerData: any): BulletData {
 }
 
 /**
- * Handles player respawn logic
+ * handles player respawn logic
  */
-function handlePlayerRespawn(players: Record<string, any>, playerData: any): void {
+function handlePlayerRespawn(players: Record<string, ServerPlayer>, clientInput: ClientPlayerInput): ServerPlayer {
   const [x, y] = bestSpawnPoint(players);
-  players[playerData.id] = {
-    ...playerData,
-    health: GAME_CONFIG.PLAYER_HEALTH,
+  const newPlayer = createPlayerWithStats(
+    clientInput.id,
+    clientInput.username,
     x,
     y,
-  };
+    clientInput.rotation,
+    GAME_CONFIG.PLAYER_HEALTH
+  );
+  players[clientInput.id] = newPlayer;
+  return newPlayer;
 }
 
 /**
- * Handles player shooting logic
+ * handles player shooting logic with optimized cooldown check
  */
 function handlePlayerShooting(
-  playerData: any,
-  player: any,
-  bullets: Record<string, any>,
+  clientInput: ClientPlayerInput,
+  serverPlayer: ServerPlayer,
+  bullets: Record<string, BulletData>,
   lastPlayersShotTime: Record<string, number>,
-  roomEmitter: any
+  roomEmitter: RoomEmitter
 ): void {
-  if (!playerData.mb1) return;
+  if (!clientInput.mb1) return;
 
   const now = Date.now();
-  const lastShotTime = lastPlayersShotTime[playerData.id];
+  const lastShotTime = lastPlayersShotTime[clientInput.id];
   
   if (!lastShotTime || now - lastShotTime >= GAME_CONFIG.SHOOTING_COOLDOWN) {
-    lastPlayersShotTime[playerData.id] = now;
-    const bullet = createBullet(player, playerData);
+    lastPlayersShotTime[clientInput.id] = now;
+    const bullet = createBullet(serverPlayer, clientInput);
     bullets[bullet.id] = bullet;
+    
+    // record shot fired for stats
+    recordShotFired(serverPlayer);
+    
     roomEmitter.emit("clientUpdateNewBullet", bullet);
   }
 }
@@ -174,53 +176,57 @@ io.on("connection", (socket: Socket) => {
   // ===== SOCKET EVENT HANDLERS =====
 
   /**
-   * Handle room joining
+   * handle room joining
    */
   socket.on("joinRoom", (roomId: string) => {
     socket.join(roomId);
     socket.data.roomId = roomId;
     console.log(`🏠 Socket ${socket.id} joined room ${roomId}`);
-    getGame(roomId); // Initialize game state if needed
+    getGame(roomId); // initialize game state if needed
   });
 
   /**
-   * Handle player updates (movement, shooting, etc.)
+   * handle player updates (movement, shooting, etc.) - optimized for efficiency
    */
-  socket.on("serverUpdateSelf", (playerData: any) => {
+  socket.on("serverUpdateSelf", (clientInput: ClientPlayerInput) => {
     const roomId = socket.data.roomId as string;
-    if (!roomId) return; // Ignore if not in a room
+    if (!roomId) return; // ignore if not in a room
 
     const game = getGame(roomId);
     const { players, bullets, walls, lastPlayersShotTime } = game;
     const roomEmitter = io.to(roomId);
 
-    let player = players[playerData.id];
+    let serverPlayer = players[clientInput.id];
 
-    // Handle respawn if player is dead or doesn't exist
-    if (!player || player.health <= 0) {
-      handlePlayerRespawn(players, playerData);
+    // handle respawn if player is dead or doesn't exist
+    if (!serverPlayer || serverPlayer.health <= 0) {
+      serverPlayer = handlePlayerRespawn(players, clientInput);
+      socket.emit("clientUpdateSelf", serverPlayer);
       return;
     }
 
-    // Create player bounds for collision detection
-    const playerBounds = createPlayerBounds(player);
+    // update server player rotation from client input
+    serverPlayer.rotation = clientInput.rotation;
 
-    // Handle shooting
-    handlePlayerShooting(playerData, player, bullets, lastPlayersShotTime, roomEmitter);
+    // create player bounds for collision detection (reuses object for efficiency)
+    const playerBounds = updatePlayerBounds(serverPlayer);
 
-    // Apply physics and handle collisions
-    determinePlayerMovement(player, playerBounds, playerData, walls);
-    bulletPlayerCollisions(roomEmitter, socket, bullets, players, playerData, playerBounds);
+    // handle shooting
+    handlePlayerShooting(clientInput, serverPlayer, bullets, lastPlayersShotTime, roomEmitter);
+
+    // apply physics and handle collisions
+    determinePlayerMovement(serverPlayer, playerBounds, clientInput, walls);
+    bulletPlayerCollisions(roomEmitter, socket, bullets, players, clientInput, playerBounds);
     bulletWallCollisions(walls, bullets);
 
-    // Send updated player state back to client
-    socket.emit("clientUpdateSelf", players[playerData.id]);
+    // send updated player state back to client
+    socket.emit("clientUpdateSelf", serverPlayer);
   });
 
   /**
-   * Handle wall addition (for level editing)
+   * handle wall addition (for level editing)
    */
-  socket.on("addWall", (wallData: any) => {
+  socket.on("addWall", (wallData: WallData) => {
     const roomId = socket.data.roomId as string;
     if (!roomId) return;
     
@@ -228,7 +234,7 @@ io.on("connection", (socket: Socket) => {
   });
 
   /**
-   * Handle player disconnection
+   * handle player disconnection
    */
   socket.on("disconnect", () => {
     console.log(`🔌 Socket ${socket.id} disconnected`);
@@ -237,32 +243,39 @@ io.on("connection", (socket: Socket) => {
 
     const game = getGame(roomId);
     delete game.players[socket.id];
+    delete game.lastPlayersShotTime[socket.id];
   });
 });
 
 // ===== GAME LOOP INTERVALS =====
 
 /**
- * Broadcast enemy positions to all clients
+ * broadcast enemy positions to all clients
  */
 setInterval(() => {
   for (const [roomId, game] of Object.entries(games)) {
-    io.to(roomId).emit("clientUpdateAllEnemies", game.players);
+    const playerCount = Object.keys(game.players).length;
+    if (playerCount > 0) {
+      io.to(roomId).emit("clientUpdateAllEnemies", game.players);
+    }
   }
 }, GAME_CONFIG.ENEMY_UPDATE_RATE);
 
 /**
- * Update bullet positions and handle collisions
+ * update bullet positions and handle collisions
  */
 setInterval(() => {
   for (const [roomId, game] of Object.entries(games)) {
-    updateBulletPosition(io.to(roomId), game.bullets, GAME_CONFIG.PHYSICS_DELTA_TIME);
-    bulletWallCollisions(game.walls, game.bullets);
+    const bulletCount = Object.keys(game.bullets).length;
+    if (bulletCount > 0) {
+      updateBulletPosition(io.to(roomId), game.bullets, GAME_CONFIG.PHYSICS_DELTA_TIME);
+      bulletWallCollisions(game.walls, game.bullets);
+    }
   }
 }, GAME_CONFIG.BULLET_UPDATE_RATE);
 
 /**
- * Display room statistics in console
+ * display room statistics in console
  */
 setInterval(() => {
   console.clear();
@@ -274,7 +287,7 @@ setInterval(() => {
     
     if (playerCount > 0) {
       const playerNames = Object.values(game.players)
-        .map((player: any) => player.username)
+        .map((serverPlayer: ServerPlayer) => serverPlayer.username)
         .filter((name: string) => name && name.trim() !== "")
         .join(", ");
 

@@ -49,6 +49,15 @@ declare const io: any;
 // pixi.js type imports
 import type { Text, Graphics } from 'pixi.js';
 
+// local type imports
+import type { WallData, DeathInfo, PlayerStats } from './types.js';
+
+// death screen imports
+import { showDeathScreen, hideDeathScreen } from './death-screen.js';
+
+// styling imports
+import { showMenuDimmer, hideMenuDimmer } from './styling.js';
+
 // ===== TYPES AND INTERFACES =====
 
 interface EnemyUI {
@@ -155,9 +164,9 @@ const enemyUIContainer = enemy_ui_init();
 app.stage.addChild(enemyUIContainer);
 
 // initialize game world and UI elements
-let wallsData: any = await background_init(app, socket);
+let wallsData: Record<string, WallData> = await background_init(app, socket);
 const player = await player_init();
-const dimRectangle = menu_dimmer_init(player);
+const dimRectangle = menu_dimmer_init(player); // legacy - returns null now
 const coordinatesText = coordinates_text_init(player);
 const FPSText = fps_text_init(app, player);
 const inventory = inventory_init();
@@ -334,17 +343,12 @@ socket.on("clientUpdateSelf", (playerData: any) => {
       // remove game elements and show menu
       app.stage.removeChild(player);
       app.stage.removeChild(UIElements);
-      app.stage.addChild(dimRectangle);
       
-      // show main UI and auth section
-      const mainUI = document.getElementById("main-ui");
-      if (mainUI) {
-        mainUI.style.display = "flex";
-      }
-      const authSection = document.getElementById("auth-section");
-      if (authSection) {
-        authSection.style.display = "block";
-      }
+      // show menu dimmer for death state
+      showMenuDimmer();
+      
+      // note: death screen will be shown via "showDeathScreen" socket event
+      // this just handles the game state cleanup
     }
     
     // update player position and rotation (preserve exact math: + 32)
@@ -459,6 +463,30 @@ socket.on("notification", (text: string) => {
   notification(text);
 });
 
+/**
+ * handles death screen display from server
+ */
+socket.on("showDeathScreen", (deathInfo: DeathInfo) => {
+  console.log("🪦 showing death screen", deathInfo);
+  showDeathScreen(deathInfo);
+});
+
+/**
+ * handles stats updates from server
+ */
+socket.on("statsUpdate", (data: { stats: PlayerStats; deathInfo?: DeathInfo }) => {
+  console.log("📊 stats update", data);
+  // stats updates can be used for live stat displays if needed
+});
+
+/**
+ * handles kill feed updates from server
+ */
+socket.on("killFeed", (data: { killer: string; victim: string; weapon: string; killerStats: PlayerStats }) => {
+  console.log("🔥 kill feed", data);
+  // kill feed can be used for displaying recent kills
+});
+
 // ===== CAMERA SYSTEM =====
 
 // camera configuration (preserve exact math: / 2)
@@ -476,7 +504,7 @@ app.ticker.add(() => {
     widthForHealthBar,
     camera, 
     UIElements,
-    dimRectangle, 
+    null, // dimRectangle is now null - using HTML dimming system
     coordinatesText,
     FPSText, 
     socketText, 
@@ -501,10 +529,15 @@ if (spawnButton) {
   spawnButton.addEventListener("click", function () {
     playing = true;
     
+    // hide death screen if it's showing
+    hideDeathScreen();
+    
     // add game elements and hide menu
     app.stage.addChild(player);
     app.stage.addChild(UIElements);
-    app.stage.removeChild(dimRectangle);
+    
+    // hide menu dimmer when playing
+    hideMenuDimmer();
     
     // hide main UI and auth section
     const mainUI = document.getElementById("main-ui");
@@ -590,7 +623,10 @@ UIElements.addChild(usernameText);
 
 // add containers to stage
 app.stage.addChild(notificationContainer);
-app.stage.addChild(dimRectangle);
+// dimRectangle is now null - using HTML dimming system instead
+
+// show menu dimmer initially (homescreen)
+showMenuDimmer();
 
 /**
  * handles UI layout on window resize

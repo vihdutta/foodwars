@@ -1,6 +1,9 @@
 declare const PIXI: any;
 const Graphics = PIXI.Graphics;
 
+// Type imports
+import type { WallData } from './types.js';
+
 export function handleDevBoundingBox(app: any, boundingBoxes: any, playerData: any, playerLength: number) {
     if (!boundingBoxes[playerData.id]) {
         const boundingBox = new Graphics();
@@ -68,7 +71,7 @@ export function handleDevEnemyBoundingBox(app: any, boundingBoxes: any, enemyDat
     boundingBox.height = playerLength;
 }
 
-export function handleDevWallBoundingBox(app: any, boundingBoxes: any, wallsData: any) {
+export function handleDevWallBoundingBox(app: any, boundingBoxes: any, wallsData: Record<string, WallData>) {
     console.log("fat sigmas");
     for (const wallId in wallsData) {
         console.log(wallId);

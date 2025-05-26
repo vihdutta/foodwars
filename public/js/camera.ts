@@ -26,14 +26,7 @@ export function updateCamera(app: any, player: any, widthForHealthBar: number, c
     app.stage.position.x = app.renderer.width / 2 - camera.x * camera.scale;
     app.stage.position.y = app.renderer.height / 2 - camera.y * camera.scale;
 
-    dimRectangle.clear();
-    dimRectangle.beginFill(0x000000, 0.4);
-    const worldW = app.renderer.width  / camera.scale;
-    const worldH = app.renderer.height / camera.scale;
-    const worldX = camera.x - worldW / 2;
-    const worldY = camera.y - worldH / 2;
-    dimRectangle.drawRect(worldX, worldY, worldW, worldH);
-    dimRectangle.endFill();
+    // dimming now handled by HTML/CSS system - no PIXI.js dimRectangle needed
 
     coordinatesText.x = camera.x + (window.innerWidth/2) / camera.scale - coordinatesText.width;
     coordinatesText.y = camera.y - (window.innerHeight/2) / camera.scale + window.innerHeight - coordinatesText.height - 10;

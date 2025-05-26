@@ -37,9 +37,7 @@
     }
     
     .glass-effect {
-      backdrop-filter: blur(10px);
-      background: rgba(255, 255, 255, 0.1);
-      border: 1px solid rgba(255, 255, 255, 0.2);
+      /* styling applied dynamically via JavaScript */
     }
     
     .chef-glow {
@@ -193,5 +191,9 @@
   <script src="/pixi/pixi.min.js"></script>
   <script src="/js/auth.js"></script>
   <script type="module" src="/js/client.js"></script>
+  <script type="module">
+    import { initializeHomescreenStyling } from '/js/styling.js';
+    initializeHomescreenStyling();
+  </script>
 </body>
 </html>

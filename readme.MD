@@ -23,3 +23,11 @@ make it so you can break some walls. if they're broken and people walk through t
 
 ## running
 use `npm run build` to create the `.js` files and then run the project with `npm run dev`
+
+## future features
+
+- friends list
+join friends' room quickly by just checking your friends list and if they're online
+- better collisions
+implement better backend collsiion detection system to reduce server load
+- real-time leaderboard / leaderboard

@@ -8,6 +8,9 @@ import session from "express-session";
 import passport from "passport";
 import { Strategy as GoogleStrategy } from "passport-google-oauth20";
 
+// Type imports
+import type { UserInfo } from "../types/game.js";
+
 // session configuration constants
 const SESSION_CONFIG = {
   secret: "secret", // todo: use environment variable for production
@@ -30,7 +33,7 @@ const AUTH_ROUTES = {
 /**
  * extracts user information from Google profile
  */
-function extractUserInfo(profile: any) {
+function extractUserInfo(profile: any): UserInfo {
   return {
     id: profile.id,
     name: profile.displayName,

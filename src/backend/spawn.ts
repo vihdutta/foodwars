@@ -3,6 +3,11 @@
  * handles finding optimal spawn locations based on player positions
  */
 
+// Type imports
+import type { ServerPlayer, Coordinate } from "../types/game.js";
+
+// ===== CONSTANTS =====
+
 // predefined spawn points across the map [x, y]
 const SPAWN_POINTS = [
   [250, 2100],
@@ -12,15 +17,17 @@ const SPAWN_POINTS = [
   [1450, 3950]
 ];
 
+// ===== SPAWN LOGIC =====
+
 /**
  * finds the best spawn point farthest from other players
  * returns a random spawn point if no other players exist
  */
-export function bestSpawnPoint(players: Record<string, any>): [number, number] {
+export function bestSpawnPoint(players: Record<string, ServerPlayer>): Coordinate {
   // return random spawn point if no other players exist
   if (Object.keys(players).length === 0) {
     const randomIndex = Math.floor(Math.random() * SPAWN_POINTS.length);
-    return SPAWN_POINTS[randomIndex] as [number, number];
+    return SPAWN_POINTS[randomIndex] as Coordinate;
   }
 
   let maxDistance = 0;
@@ -31,10 +38,10 @@ export function bestSpawnPoint(players: Record<string, any>): [number, number] {
     let minDistanceToAnyPlayer = Infinity;
 
     // find the closest player to this spawn point
-    Object.values(players).forEach((player: any) => {
+    Object.values(players).forEach((serverPlayer: ServerPlayer) => {
       // calculate euclidean distance using pythagorean theorem
       const distance = Math.sqrt(
-        Math.pow(player.x - spawnPoint[0], 2) + Math.pow(player.y - spawnPoint[1], 2)
+        Math.pow(serverPlayer.x - spawnPoint[0], 2) + Math.pow(serverPlayer.y - spawnPoint[1], 2)
       );
       
       if (distance < minDistanceToAnyPlayer) {
@@ -49,5 +56,5 @@ export function bestSpawnPoint(players: Record<string, any>): [number, number] {
     }
   });
 
-  return bestSpawn as [number, number];
+  return bestSpawn as Coordinate;
 }
