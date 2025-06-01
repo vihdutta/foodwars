@@ -46,7 +46,16 @@ jobs:
             #!/usr/bin/env bash
             set -euo pipefail
 
-            DOMAIN_NAME="${{ vars.DOMAIN_NAME }}"
+            DOMAIN_NAME="foodwars.vihdutta.com"
+
+            # Install Docker Compose v2 if not already installed
+            if ! docker compose version &>/dev/null; then
+              echo "Installing Docker Compose v2..."
+              sudo mkdir -p /usr/libexec/docker/cli-plugins
+              sudo curl -SL https://github.com/docker/compose/releases/latest/download/docker-compose-linux-x86_64 \
+                -o /usr/libexec/docker/cli-plugins/docker-compose
+              sudo chmod +x /usr/libexec/docker/cli-plugins/docker-compose
+            fi
 
             # Create .env file
             cat > /home/${{ vars.LIGHTSAIL_USERNAME }}/.env << EOF
@@ -110,15 +119,15 @@ jobs:
             }
             EOF
 
-            # Stop and remove existing containers (v2 style)
+            # Stop and remove existing containers (Docker Compose v2 style)
             cd /home/${{ vars.LIGHTSAIL_USERNAME }}
             sudo docker compose down || true
             sudo docker rmi ${{ vars.DOCKERHUB_USERNAME }}/foodwars-app:latest || true
 
-            # Reload nginx
+            # Reload NGINX
             sudo nginx -t
             sudo systemctl reload nginx
 
-            # Pull latest image and start services (v2 style)
+            # Pull and start
             sudo docker pull ${{ vars.DOCKERHUB_USERNAME }}/foodwars-app:latest
             sudo docker compose up -d
