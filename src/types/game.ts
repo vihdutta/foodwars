@@ -99,7 +99,7 @@ export interface GameState {
   gameStartTime?: number; // timestamp when the first player spawned
   gameEndTime?: number; // timestamp when the game ended
   gameEnded: boolean; // whether the game has ended
-  gameStats: Record<string, PlayerStats & { username: string; socketId: string }>; // comprehensive stats by socket ID
+  // gameStats moved to Redis - no longer stored in memory
 }
 
 // ===== WALL TYPES =====

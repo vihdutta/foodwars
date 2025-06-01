@@ -31,3 +31,5 @@ join friends' room quickly by just checking your friends list and if they're onl
 - better collisions
 implement better backend collsiion detection system to reduce server load
 - real-time leaderboard / leaderboard
+
+rename to Kitchen Kombat

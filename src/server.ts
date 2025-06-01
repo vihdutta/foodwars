@@ -11,6 +11,20 @@ import { createServer } from "http";
 import { Server, Socket } from "socket.io";
 import crypto from "crypto";
 
+// Redis service import
+import { 
+  initRedis, 
+  closeRedis, 
+  setPlayerStats, 
+  getPlayerStats, 
+  getAllPlayerStats, 
+  incrementPlayerStat, 
+  updatePlayerStat, 
+  initializePlayerStats, 
+  clearRoomStats,
+  redisHealthCheck 
+} from "./services/redis.js";
+
 // Game logic imports
 import {
   bulletWallCollisions,
@@ -28,12 +42,6 @@ import {
   recordDeath,
   sendDeathScreen,
   broadcastKillNotification,
-  updateGameStatsShotFired,
-  updateGameStatsShotHit,
-  updateGameStatsKill,
-  updateGameStatsDeath,
-  updateGameStatsTimeAlive,
-  calculateFinalTimeAlive,
 } from "./backend/stats.js";
 
 // Type imports
@@ -81,7 +89,7 @@ function getGame(roomId: string): GameState {
       walls: {},
       lastPlayersShotTime: {},
       gameEnded: false,
-      gameStats: {},
+      // gameStats now stored in Redis
     };
   }
   return games[roomId];
@@ -122,7 +130,7 @@ function createBullet(serverPlayer: ServerPlayer, clientInput: ClientPlayerInput
 /**
  * handles player respawn logic
  */
-function handlePlayerRespawn(players: Record<string, ServerPlayer>, clientInput: ClientPlayerInput, game: GameState): ServerPlayer {
+async function handlePlayerRespawn(players: Record<string, ServerPlayer>, clientInput: ClientPlayerInput, roomId: string): Promise<ServerPlayer> {
   const [x, y] = bestSpawnPoint(players);
   const newPlayer = createPlayerWithStats(
     clientInput.id,
@@ -134,19 +142,11 @@ function handlePlayerRespawn(players: Record<string, ServerPlayer>, clientInput:
   );
   players[clientInput.id] = newPlayer;
   
-  // Initialize game stats for this player if not exists
-  if (!game.gameStats[clientInput.id]) {
-    game.gameStats[clientInput.id] = {
-      username: clientInput.username,
-      socketId: clientInput.id,
-      kills: 0,
-      deaths: 0,
-      damageDealt: 0,
-      shotsFired: 0,
-      shotsHit: 0,
-      timeAlive: 0,
-      gamesPlayed: 1
-    };
+  // Initialize game stats in Redis for this player if not exists
+  try {
+    await initializePlayerStats(roomId, clientInput.id, clientInput.username);
+  } catch (error) {
+    console.error(`❌ Failed to initialize player stats in Redis for ${clientInput.id}:`, error);
   }
   
   return newPlayer;
@@ -178,7 +178,7 @@ function getRemainingTime(game: GameState): number {
 /**
  * checks if the game should end and handles game end logic
  */
-function checkGameEnd(roomId: string, game: GameState, roomEmitter: RoomEmitter): void {
+async function checkGameEnd(roomId: string, game: GameState, roomEmitter: RoomEmitter): Promise<void> {
   if (game.gameEnded) return;
   
   const remainingTime = getRemainingTime(game);
@@ -187,25 +187,57 @@ function checkGameEnd(roomId: string, game: GameState, roomEmitter: RoomEmitter)
     game.gameEndTime = Date.now();
     console.log(`🏁 Game ended for room ${roomId}`);
     
-    // Calculate final time alive for all players
-    if (game.gameStartTime && game.gameEndTime) {
-      calculateFinalTimeAlive(game.gameStats, game.players, game.gameStartTime, game.gameEndTime);
+    try {
+      // Get all player stats from Redis
+      const finalStats = await getAllPlayerStats(roomId);
+      
+      // Calculate final time alive for all players
+      if (game.gameStartTime && game.gameEndTime) {
+        // Update time alive for all currently alive players
+        for (const player of Object.values(game.players)) {
+          if (player.health > 0) {
+            const timeAliveThisLife = Math.floor((game.gameEndTime - player.sessionStartTime) / 1000);
+            await incrementPlayerStat(roomId, player.id, 'timeAlive', timeAliveThisLife);
+          }
+        }
+        
+        // Get updated stats after time calculation
+        const updatedStats = await getAllPlayerStats(roomId);
+        
+        // Send game end event with comprehensive stats (by socket ID)
+        roomEmitter.emit("gameEnded", {
+          finalStats: updatedStats
+        });
+      } else {
+        // Send current stats if no timing info available
+        roomEmitter.emit("gameEnded", {
+          finalStats: finalStats
+        });
+      }
+      
+      // Reset all players (health to 0 to trigger respawn)
+      Object.values(game.players).forEach(player => {
+        player.health = 0;
+      });
+      
+      // Reset game state and clear Redis for next round
+      setTimeout(async () => {
+        await resetGameState(roomId, game);
+      }, 1000); // Small delay to ensure game-ended screen shows first
+      
+    } catch (error) {
+      console.error(`❌ Error ending game for room ${roomId}:`, error);
+      
+      // Fallback: send empty stats
+      roomEmitter.emit("gameEnded", {
+        finalStats: []
+      });
+      
+      // Still reset the game state
+      setTimeout(async () => {
+        await resetGameState(roomId, game);
+      }, 1000);
     }
-    
-    // Send game end event with comprehensive stats (by socket ID)
-    roomEmitter.emit("gameEnded", {
-      finalStats: Object.values(game.gameStats)
-    });
-    
-    // Reset all players (health to 0 to trigger respawn)
-    Object.values(game.players).forEach(player => {
-      player.health = 0;
-    });
-    
-    // Reset game state for next round
-    setTimeout(() => {
-      resetGameState(game);
-    }, 1000); // Small delay to ensure game-ended screen shows first
   }
 }
 
@@ -231,27 +263,34 @@ function cleanupInactiveRooms(): void {
 /**
  * resets game state for a new game
  */
-function resetGameState(game: GameState): void {
+async function resetGameState(roomId: string, game: GameState): Promise<void> {
   game.gameStartTime = undefined;
   game.gameEndTime = undefined;
   game.gameEnded = false;
   game.bullets = {};
   game.lastPlayersShotTime = {};
-  game.gameStats = {};
-  console.log(`🔄 Game state reset for new game`);
+  
+  // Clear Redis stats for this room
+  try {
+    await clearRoomStats(roomId);
+  } catch (error) {
+    console.error(`❌ Failed to clear Redis stats for room ${roomId}:`, error);
+  }
+  
+  console.log(`🔄 Game state reset for new game in room ${roomId}`);
 }
 
 /**
  * handles player shooting logic with optimized cooldown check
  */
-function handlePlayerShooting(
+async function handlePlayerShooting(
   clientInput: ClientPlayerInput,
   serverPlayer: ServerPlayer,
   bullets: Record<string, BulletData>,
   lastPlayersShotTime: Record<string, number>,
   roomEmitter: RoomEmitter,
-  game: GameState
-): void {
+  roomId: string
+): Promise<void> {
   if (!clientInput.mb1) return;
 
   const now = Date.now();
@@ -264,7 +303,13 @@ function handlePlayerShooting(
     
     // record shot fired for stats
     recordShotFired(serverPlayer);
-    updateGameStatsShotFired(game.gameStats, clientInput.id);
+    
+    // Update Redis stats
+    try {
+      await incrementPlayerStat(roomId, clientInput.id, 'shotsFired', 1);
+    } catch (error) {
+      console.error(`❌ Failed to update shotsFired stat for ${clientInput.id}:`, error);
+    }
     
     roomEmitter.emit("clientUpdateNewBullet", bullet);
   }
@@ -304,7 +349,7 @@ io.on("connection", (socket: Socket) => {
   /**
    * handle player updates (movement, shooting, etc.) - optimized for efficiency
    */
-  socket.on("serverUpdateSelf", (clientInput: ClientPlayerInput) => {
+  socket.on("serverUpdateSelf", async (clientInput: ClientPlayerInput) => {
     const roomId = socket.data.roomId as string;
     if (!roomId) return; // ignore if not in a room
 
@@ -331,7 +376,7 @@ io.on("connection", (socket: Socket) => {
         return;
       }
       
-      serverPlayer = handlePlayerRespawn(players, clientInput, game);
+      serverPlayer = await handlePlayerRespawn(players, clientInput, roomId);
       
       // Reset session start time for new life
       serverPlayer.sessionStartTime = Date.now();
@@ -358,11 +403,11 @@ io.on("connection", (socket: Socket) => {
     const playerBounds = updatePlayerBounds(serverPlayer);
 
     // handle shooting
-    handlePlayerShooting(clientInput, serverPlayer, bullets, lastPlayersShotTime, roomEmitter, game);
+    await handlePlayerShooting(clientInput, serverPlayer, bullets, lastPlayersShotTime, roomEmitter, roomId);
 
     // apply physics and handle collisions
     determinePlayerMovement(serverPlayer, playerBounds, clientInput, walls);
-    bulletPlayerCollisions(roomEmitter, socket, bullets, players, clientInput, playerBounds, game.gameStats);
+    await bulletPlayerCollisions(roomEmitter, socket, bullets, players, clientInput, playerBounds, roomId);
     bulletWallCollisions(walls, bullets);
 
     // send updated player state back to client
@@ -468,8 +513,45 @@ setInterval(() => {
 
 // ===== SERVER STARTUP =====
 
-server.listen(PORT, () => {
-  console.log(`🚀 Food Wars server cooking on port ${PORT}`);
-  console.log(`🌐 Visit http://localhost:${PORT} to start battling!`);
+async function startServer() {
+  try {
+    // Initialize Redis connection
+    await initRedis();
+    
+    // Start the HTTP server
+    server.listen(PORT, () => {
+      console.log(`🚀 Food Wars server cooking on port ${PORT}`);
+      console.log(`🌐 Visit http://localhost:${PORT} to start battling!`);
+    });
+  } catch (error) {
+    console.error('❌ Failed to start server:', error);
+    process.exit(1);
+  }
+}
+
+// Handle graceful shutdown
+process.on('SIGINT', async () => {
+  console.log('\n🛑 Shutting down server...');
+  try {
+    await closeRedis();
+    process.exit(0);
+  } catch (error) {
+    console.error('❌ Error during shutdown:', error);
+    process.exit(1);
+  }
 });
+
+process.on('SIGTERM', async () => {
+  console.log('\n🛑 Shutting down server...');
+  try {
+    await closeRedis();
+    process.exit(0);
+  } catch (error) {
+    console.error('❌ Error during shutdown:', error);
+    process.exit(1);
+  }
+});
+
+// Start the server
+startServer();
 

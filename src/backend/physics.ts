@@ -21,11 +21,10 @@ import {
   recordDeath,
   sendDeathScreen,
   broadcastKillNotification,
-  updateGameStatsShotHit,
-  updateGameStatsKill,
-  updateGameStatsDeath,
-  updateGameStatsTimeAlive,
 } from "./stats.js";
+
+// Redis imports
+import { incrementPlayerStat } from "../services/redis.js";
 
 // ===== CONSTANTS =====
 
@@ -122,20 +121,20 @@ export function determinePlayerMovement(
  * handles collisions between bullets and players
  * applies damage and handles player death
  */
-export function bulletPlayerCollisions(
+export async function bulletPlayerCollisions(
   io: RoomEmitter,
   socket: GameSocket,
   bullets: Record<string, BulletData>,
   players: Record<string, ServerPlayer>,
   clientInput: ClientPlayerInput,
   playerBounds: PlayerBounds,
-  gameStats: Record<string, any>
-): void {
+  roomId: string
+): Promise<void> {
   const currentPlayer = players[clientInput.id];
   if (!currentPlayer) return;
 
   // check collision between each bullet and the current player
-  Object.entries(bullets).forEach(([bulletId, bullet]: [string, BulletData]) => {
+  for (const [bulletId, bullet] of Object.entries(bullets)) {
     // only check collision if bullet wasn't fired by this player
     if (bullet.parent_id !== socket.id) {
       if (checkCollision(bullet, playerBounds)) {
@@ -145,7 +144,12 @@ export function bulletPlayerCollisions(
         // record hit for shooter stats
         if (shooter) {
           recordShotHit(shooter, BULLET_DAMAGE);
-          updateGameStatsShotHit(gameStats, bullet.parent_id, BULLET_DAMAGE);
+          try {
+            await incrementPlayerStat(roomId, bullet.parent_id, 'shotsHit', 1);
+            await incrementPlayerStat(roomId, bullet.parent_id, 'damageDealt', BULLET_DAMAGE);
+          } catch (error) {
+            console.error(`❌ Failed to update hit stats for ${bullet.parent_id}:`, error);
+          }
         }
         
         // apply damage to player
@@ -161,13 +165,22 @@ export function bulletPlayerCollisions(
           // record kill and death stats
           if (shooter) {
             recordKill(shooter);
-            updateGameStatsKill(gameStats, bullet.parent_id);
+            try {
+              await incrementPlayerStat(roomId, bullet.parent_id, 'kills', 1);
+            } catch (error) {
+              console.error(`❌ Failed to update kill stats for ${bullet.parent_id}:`, error);
+            }
           }
-          updateGameStatsDeath(gameStats, clientInput.id);
           
-          // calculate and record time alive for this life
-          const timeAliveThisLife = Math.floor((Date.now() - currentPlayer.sessionStartTime) / 1000);
-          updateGameStatsTimeAlive(gameStats, clientInput.id, timeAliveThisLife);
+          try {
+            await incrementPlayerStat(roomId, clientInput.id, 'deaths', 1);
+            
+            // calculate and record time alive for this life
+            const timeAliveThisLife = Math.floor((Date.now() - currentPlayer.sessionStartTime) / 1000);
+            await incrementPlayerStat(roomId, clientInput.id, 'timeAlive', timeAliveThisLife);
+          } catch (error) {
+            console.error(`❌ Failed to update death stats for ${clientInput.id}:`, error);
+          }
           
           const deathInfo = recordDeath(currentPlayer, bullet.parent_username);
           
@@ -185,7 +198,7 @@ export function bulletPlayerCollisions(
         }
       }
     }
-  });
+  }
 }
 
 /**

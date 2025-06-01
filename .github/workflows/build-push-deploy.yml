@@ -21,7 +21,7 @@ jobs:
           username: ${{ vars.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_ACCESS_TOKEN }}
 
-      - name: Build & Push Image
+      - name: Build & Push FoodWars App Image
         uses: docker/build-push-action@v4
         with:
           context: .
@@ -52,7 +52,39 @@ jobs:
             cat > /home/${{ vars.LIGHTSAIL_USERNAME }}/.env << EOF
             GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}
             GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}
+            REDIS_URL=redis://redis:6379
             # Add any other environment variables you need
+            EOF
+
+            # Create docker-compose.yml file
+            cat > /home/${{ vars.LIGHTSAIL_USERNAME }}/docker-compose.yml << EOF
+            version: '3.8'
+
+            services:
+              foodwars-app:
+                image: ${{ vars.DOCKERHUB_USERNAME }}/foodwars-app:latest
+                ports:
+                  - "127.0.0.1:8080:8080"
+                environment:
+                  - REDIS_URL=redis://redis:6379
+                env_file:
+                  - .env
+                depends_on:
+                  - redis
+                networks:
+                  - foodwars-network
+                restart: unless-stopped
+
+              redis:
+                image: redis:7-alpine
+                networks:
+                  - foodwars-network
+                command: redis-server --appendonly no --save ""
+                restart: unless-stopped
+
+            networks:
+              foodwars-network:
+                driver: bridge
             EOF
 
             # Write reverse-proxy config
@@ -79,17 +111,15 @@ jobs:
             }
             EOF
 
-            # stop and delete container
-            sudo docker stop foodwars-app || true
-            sudo docker rm foodwars-app || true
-            sudo docker rmi ${{ vars.DOCKERHUB_USERNAME }}/foodwars-app:latest
+            # Stop and remove existing containers
+            cd /home/${{ vars.LIGHTSAIL_USERNAME }}
+            sudo docker-compose down || true
+            sudo docker rmi ${{ vars.DOCKERHUB_USERNAME }}/foodwars-app:latest || true
 
             # reload nginx
             sudo nginx -t
-            sudo systemctl reload nginx            # pull and run new container
+            sudo systemctl reload nginx
+
+            # Pull latest image and start services with Docker Compose
             sudo docker pull ${{ vars.DOCKERHUB_USERNAME }}/foodwars-app:latest
-            sudo docker run -d \
-              --name foodwars-app \
-              --env-file /home/${{ vars.LIGHTSAIL_USERNAME }}/.env \
-              -p 127.0.0.1:8080:8080 \
-              ${{ vars.DOCKERHUB_USERNAME }}/foodwars-app:latest
+            sudo docker-compose up -d

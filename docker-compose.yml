@@ -1,0 +1,25 @@
+version: '3.8'
+
+services:
+  foodwars-app:
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      - redis
+    networks:
+      - foodwars-network
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    networks:
+      - foodwars-network
+    command: redis-server --appendonly no --save ""
+
+networks:
+  foodwars-network:
+    driver: bridge 
