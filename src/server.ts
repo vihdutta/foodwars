@@ -25,6 +25,17 @@ import {
   redisHealthCheck 
 } from "./services/redis.js";
 
+// Supabase and user session imports
+import { initSupabase } from "./services/supabase.js";
+import { 
+  registerAuthenticatedUser, 
+  unregisterUser, 
+  getUserInfo,
+  isAuthenticated,
+  validateUserInfo 
+} from "./services/user-session.js";
+import { saveEndGameStats } from "./services/stats-persistence.js";
+
 // Game logic imports
 import {
   bulletWallCollisions,
@@ -69,7 +80,7 @@ const GAME_CONFIG = {
   BULLET_UPDATE_RATE: 1000 / 50, // 50 FPS
   STATS_UPDATE_RATE: 1000, // 1 second
   PHYSICS_DELTA_TIME: 1 / 60, // 60 FPS physics
-  GAME_DURATION_MINUTES: 5, // Game duration in minutes
+  GAME_DURATION_MINUTES: 5,
 } as const;
 
 const PORT = process.env.PORT || 8080;
@@ -190,6 +201,16 @@ async function checkGameEnd(roomId: string, game: GameState, roomEmitter: RoomEm
     try {
       // Get all player stats from Redis
       const finalStats = await getAllPlayerStats(roomId);
+      
+      // Save stats to Supabase for authenticated users
+      const playerSocketIds = Object.keys(game.players);
+      if (playerSocketIds.length > 0) {
+        try {
+          await saveEndGameStats(roomId, playerSocketIds);
+        } catch (error) {
+          console.error(`❌ Failed to save stats to Supabase for room ${roomId}:`, error);
+        }
+      }
       
       // Calculate final time alive for all players
       if (game.gameStartTime && game.gameEndTime) {
@@ -347,6 +368,19 @@ io.on("connection", (socket: Socket) => {
   });
 
   /**
+   * handle user authentication for socket connection
+   */
+  socket.on("authenticateUser", (userInfo: any) => {
+    if (validateUserInfo(userInfo)) {
+      registerAuthenticatedUser(socket.id, userInfo);
+      socket.emit("authenticationConfirmed", { success: true });
+    } else {
+      console.warn(`⚠️ Invalid user info for socket ${socket.id}:`, userInfo);
+      socket.emit("authenticationConfirmed", { success: false, error: "Invalid user info" });
+    }
+  });
+
+  /**
    * handle player updates (movement, shooting, etc.) - optimized for efficiency
    */
   socket.on("serverUpdateSelf", async (clientInput: ClientPlayerInput) => {
@@ -424,8 +458,6 @@ io.on("connection", (socket: Socket) => {
     getGame(roomId).walls[wallData.id] = wallData;
   });
 
-
-
   /**
    * handle player disconnection
    */
@@ -437,6 +469,9 @@ io.on("connection", (socket: Socket) => {
     const game = getGame(roomId);
     delete game.players[socket.id];
     delete game.lastPlayersShotTime[socket.id];
+    
+    // Unregister authenticated user
+    unregisterUser(socket.id);
   });
 });
 
@@ -518,6 +553,9 @@ async function startServer() {
   try {
     // Initialize Redis connection
     await initRedis();
+    
+    // Initialize Supabase connection
+    initSupabase();
     
     // Start the HTTP server
     server.listen(PORT, () => {

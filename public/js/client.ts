@@ -154,6 +154,11 @@ const socket = io(socketUrl);
 socket.on("connect", () => {
   console.log("🔌 socket", socket.id, "connected");
   socket.emit("joinRoom", getRoomFromHash());
+  (window as any).socket = socket;
+
+  if ((window as any).authManager) {
+    (window as any).authManager.authenticateSocketIfReady();
+  }
 });
 
 // ===== PIXI APPLICATION SETUP =====

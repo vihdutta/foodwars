@@ -16,6 +16,10 @@ class AuthManager {
         this.setupEventListeners();
         this.handleAuthCallback();
         await this.checkAuthStatus();
+        // authenticate socket if user logged in
+        if (this.user) {
+            this.authenticateSocket();
+        }
     }
 
     async checkAuthStatus() {
@@ -30,6 +34,7 @@ class AuthManager {
                 console.log('User authenticated:', this.user);
                 this.showLoggedInState();
                 this.autofillUsername();
+                this.authenticateSocket();
             } else {
                 console.log('User not authenticated');
                 this.showLoggedOutState();
@@ -143,6 +148,40 @@ class AuthManager {
 
     isAuthenticated(): boolean {
         return this.user !== null;
+    }
+
+    authenticateSocket() {
+        if (this.user && (window as any).socket) {
+            console.log('🔐 Authenticating socket with user info');
+            const socket = (window as any).socket;
+            socket.emit('authenticateUser', this.user);
+            
+            socket.on('authenticationConfirmed', (result: { success: boolean; error?: string }) => {
+                if (result.success) {
+                    console.log('✅ Socket authentication successful');
+                } else {
+                    console.error('❌ Socket authentication failed:', result.error);
+                }
+            });
+        } else {
+            console.log('⏳ Waiting for socket connection to authenticate...');
+            // Retry after a short delay if socket isn't ready yet
+            setTimeout(() => {
+                if (this.user && (window as any).socket) {
+                    this.authenticateSocket();
+                }
+            }, 1000);
+        }
+    }
+
+    /**
+     * public method to trigger socket authentication
+     * called when socket becomes available
+     */
+    authenticateSocketIfReady(): void {
+        if (this.user) {
+            this.authenticateSocket();
+        }
     }
 }
 
