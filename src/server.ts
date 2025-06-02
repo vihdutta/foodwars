@@ -452,12 +452,13 @@ setInterval(() => {
       const roomEmitter = io.to(roomId);
       roomEmitter.emit("clientUpdateAllEnemies", game.players);
       
-      // Check for game end and send timer updates
-      checkGameEnd(roomId, game, roomEmitter);
-      
-      // Send timer update to all players
-      const remainingTime = getRemainingTime(game);
-      roomEmitter.emit("timerUpdate", { remainingTime });
+      // only check for game end and send timer updates if game has actually started
+      if (game.gameStartTime) {
+        checkGameEnd(roomId, game, roomEmitter);
+        
+        const remainingTime = getRemainingTime(game);
+        roomEmitter.emit("timerUpdate", { remainingTime });
+      }
     }
   }
 }, GAME_CONFIG.ENEMY_UPDATE_RATE);
