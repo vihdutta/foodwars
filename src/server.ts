@@ -345,6 +345,7 @@ app.use(express.static("public"));
 app.use("/pixi", express.static("./node_modules/pixi.js/dist/"));
 
 // Authentication setup
+app.set("trust proxy", 1); // needed for supabase auth to work on production
 setupAuth(app);
 
 // ===== SOCKET.IO SERVER SETUP =====
