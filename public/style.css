@@ -22,3 +22,26 @@ canvas {
     color: black;
     padding: 20px;
   }
+
+/* Leaderboard dropdown styling */
+.leaderboard-dropdown {
+    /* Button appearance remains with bg-white/20 from Tailwind */
+}
+
+/* Style the dropdown options with dark transparent background */
+.leaderboard-dropdown option {
+    background-color: rgba(0, 0, 0, 0.8) !important;
+    color: #ffffff !important;
+    padding: 8px 12px;
+}
+
+/* Hover state for dropdown options */
+.leaderboard-dropdown option:hover {
+    background-color: rgba(0, 0, 0, 0.9) !important;
+}
+
+/* Checked/selected state for dropdown options */
+.leaderboard-dropdown option:checked {
+    background-color: rgba(30, 30, 30, 0.9) !important;
+    color: #FFD54F !important; /* chef-yellow color */
+}

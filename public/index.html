@@ -24,6 +24,7 @@
   </script>
   <link href="https://fonts.googleapis.com/css2?family=Fredoka+One:wght@400&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="style.css">
   <title>Food Wars - Chef Battle Arena</title>
   <style>
     body {
@@ -184,7 +185,7 @@
         </div>
       </div>
     </div>
-  
+
   </div>
 
   <script src="/socket.io/socket.io.js"></script>
@@ -193,7 +194,16 @@
   <script type="module" src="/js/client.js"></script>
   <script type="module">
     import { initializeHomescreenStyling } from '/js/styling.js';
+    import { LeaderboardManager } from '/js/leaderboard.js';
+    
+    // Initialize homescreen styling
     initializeHomescreenStyling();
+    
+    // Initialize leaderboard (always visible)
+    const leaderboardManager = new LeaderboardManager();
+    
+    // Make leaderboard manager globally accessible for debugging
+    window.leaderboardManager = leaderboardManager;
   </script>
 </body>
 </html>

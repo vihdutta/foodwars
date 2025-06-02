@@ -6,7 +6,7 @@
 import dotenv from "dotenv";
 dotenv.config();
 
-import express from "express";
+import express, { Request, Response } from "express";
 import { createServer } from "http";
 import { Server, Socket } from "socket.io";
 import crypto from "crypto";
@@ -26,7 +26,7 @@ import {
 } from "./services/redis.js";
 
 // Supabase and user session imports
-import { initSupabase } from "./services/supabase.js";
+import { initSupabase, getLeaderboard } from "./services/supabase.js";
 import { 
   registerAuthenticatedUser, 
   unregisterUser, 
@@ -340,6 +340,9 @@ async function handlePlayerShooting(
 
 const app = express();
 
+// JSON middleware for API routes
+app.use(express.json());
+
 // Static file serving
 app.use(express.static("public"));
 app.use("/pixi", express.static("./node_modules/pixi.js/dist/"));
@@ -347,6 +350,40 @@ app.use("/pixi", express.static("./node_modules/pixi.js/dist/"));
 // Authentication setup
 app.set("trust proxy", 1); // needed for supabase auth to work on production
 setupAuth(app);
+
+// ===== API ROUTES =====
+
+// Leaderboard endpoint - public access, no authentication required
+app.get('/api/leaderboard', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const metric = req.query.metric as string || 'kills';
+    const limit = parseInt(req.query.limit as string) || 10;
+    
+    // Validate metric parameter
+    const validMetrics = ['kills', 'kdr', 'accuracy', 'time_alive'];
+    if (!validMetrics.includes(metric)) {
+      res.status(400).json({
+        success: false,
+        error: 'Invalid metric. Must be one of: kills, kdr, accuracy, time_alive'
+      });
+      return;
+    }
+    
+    // Get leaderboard data from Supabase
+    const leaderboard = await getLeaderboard(metric as any, limit);
+    
+    res.json({
+      success: true,
+      data: leaderboard
+    });
+  } catch (error) {
+    console.error('❌ Leaderboard API error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch leaderboard data'
+    });
+  }
+});
 
 // ===== SOCKET.IO SERVER SETUP =====
 
