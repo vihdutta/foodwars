@@ -319,6 +319,7 @@ socket.on("clientUpdateAllEnemies", (enemiesData: Record<string, any>) => {
       const { container } = enemyUIElements[id];
       enemyUIContainer.removeChild(container);
       delete enemyUIElements[id];
+      app.stage.removeChild(enemySprites[id]);
       delete enemySprites[id];
     }
   }
