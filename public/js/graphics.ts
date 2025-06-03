@@ -75,7 +75,7 @@ export function menu_dimmer_init(player: any) {
 
 export function coordinates_text_init(player: any) {
     const coordinatesText = new PIXI.Text("(" + player.x + ", " + player.y + ")", {
-        fontFamily: "Arial",
+        fontFamily: "Fredoka One",
         fontSize: 30,
         fill: "ffffff",
         stroke: "000000",
@@ -94,7 +94,7 @@ export function coordinates_text_init(player: any) {
 
 export function fps_text_init(app: any, player: any) {
     const FPSText = new PIXI.Text("(" + player.x + ", " + player.y + ")", {
-        fontFamily: "Arial",
+        fontFamily: "Fredoka One",
         fontSize: 30,
         fill: "ffffff",
         stroke: "000000",
@@ -142,7 +142,7 @@ export function health_bar_value_init() {
 
 export function socket_text_init(socket: any) {
     const socketText = new PIXI.Text("SOCKET ID: " + socket.id, {
-        fontFamily: "Arial",
+        fontFamily: "Fredoka One",
         fontSize: 10,
         fill: "ffffff",
     });
@@ -153,7 +153,7 @@ export function socket_text_init(socket: any) {
 
 export function bullet_count_init() {
     const bulletCount = new PIXI.Text("Bullets: 0", {
-        fontFamily: "Arial",
+        fontFamily: "Fredoka One",
         fontSize: 30,
         fill: "ffffff",
         stroke: "000000",
@@ -167,7 +167,7 @@ export function bullet_count_init() {
 
 export function ping_init() {
     const pingText = new PIXI.Text("Ping: 0ms", {
-        fontFamily: "Arial",
+        fontFamily: "Fredoka One",
         fontSize: 30,
         fill: "ffffff",
         stroke: "000000",
@@ -181,7 +181,7 @@ export function ping_init() {
 
 export function wall_count_init() {
     const wallCount = new PIXI.Text("Walls: " + createTileMap().flat().filter(tile => tile === 4).length, {
-        fontFamily: "Arial",
+        fontFamily: "Fredoka One",
         fontSize: 30,
         fill: "ffffff",
         stroke: "000000",
@@ -195,7 +195,7 @@ export function wall_count_init() {
 
 export function centering_test_init() {
     const centeringText = new PIXI.Text("HELLO", {
-    fontFamily: "Arial",
+    fontFamily: "Fredoka One",
     fontSize: 30,
     fill: "ffffff",
     });
@@ -207,7 +207,7 @@ export function centering_test_init() {
 
 export function username_init(username: string = "") {
     const usernameText = new PIXI.Text(username, {
-        fontFamily: "Arial",
+        fontFamily: "Fredoka One",
         fontSize: 30,
         fill: "ffffff",
         stroke: "000000",
@@ -220,7 +220,7 @@ export function username_init(username: string = "") {
 
 export function timer_init() {
     const timerText = new PIXI.Text("5:00", {
-        fontFamily: "Arial",
+        fontFamily: "Fredoka One",
         fontSize: 36,
         fill: "ffffff",
         stroke: "000000",
