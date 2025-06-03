@@ -6,6 +6,7 @@ const Graphics = PIXI.Graphics;
 
 // Type imports
 import type { WallData } from './types.js';
+import { notification_init } from './notifications.js';
 
 function createTileMap() {
     return [[1, 1, 1, 1, 1, 1, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 1, 1, 1, 1, 1, 1], [1, 1, 1, 1, 1, 1, 3, 2, 4, 4, 4, 4, 4, 4, 4, 2, 3, 1, 1, 1, 1, 1, 1], [1, 1, 1, 1, 1, 1, 3, 2, 2, 4, 4, 4, 4, 4, 2, 2, 3, 1, 1, 1, 1, 1, 1], [1, 1, 1, 1, 1, 1, 3, 2, 2, 2, 3, 3, 3, 2, 2, 2, 3, 1, 1, 1, 1, 1, 1], [1, 1, 1, 1, 1, 1, 3, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 1, 1, 1, 1, 1, 1], [1, 1, 1, 1, 1, 1, 3, 3, 3, 2, 2, 2, 2, 2, 3, 3, 3, 1, 1, 1, 1, 1, 1], [1, 1, 1, 1, 1, 1, 3, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 1, 1, 1, 1, 1, 1], [3, 3, 3, 3, 3, 3, 3, 2, 2, 2, 3, 3, 3, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3], [3, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3], [3, 3, 3, 3, 3, 2, 3, 3, 3, 2, 2, 2, 2, 2, 3, 3, 3, 2, 3, 3, 3, 3, 3], [3, 2, 2, 2, 2, 2, 3, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 2, 2, 2, 2, 2, 3], [3, 2, 2, 2, 2, 2, 3, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 2, 2, 2, 2, 2, 3], [3, 2, 2, 2, 2, 2, 3, 2, 2, 2, 2, 3, 2, 2, 2, 2, 3, 2, 2, 2, 2, 2, 3], [3, 4, 2, 2, 2, 2, 2, 2, 2, 2, 4, 3, 4, 2, 2, 2, 2, 2, 2, 2, 2, 4, 3], [3, 4, 4, 3, 2, 2, 2, 2, 2, 3, 4, 3, 4, 3, 2, 2, 2, 2, 2, 3, 4, 4, 3], [3, 4, 4, 3, 2, 2, 2, 2, 2, 3, 4, 4, 4, 3, 2, 2, 2, 2, 2, 3, 4, 4, 3], [3, 4, 4, 3, 2, 2, 2, 2, 4, 4, 4, 4, 4, 4, 4, 2, 2, 2, 2, 3, 4, 4, 3], [3, 4, 4, 3, 2, 2, 2, 2, 2, 3, 4, 4, 4, 3, 2, 2, 2, 2, 2, 3, 4, 4, 3], [3, 4, 4, 3, 2, 2, 2, 2, 2, 3, 4, 3, 4, 3, 2, 2, 2, 2, 2, 3, 4, 4, 3], [3, 4, 2, 2, 2, 2, 2, 2, 2, 2, 4, 3, 4, 2, 2, 2, 2, 2, 2, 2, 2, 4, 3], [3, 2, 2, 2, 2, 2, 3, 2, 2, 2, 2, 3, 2, 2, 2, 2, 3, 2, 2, 2, 2, 2, 3], [3, 2, 2, 2, 2, 2, 3, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 2, 2, 2, 2, 2, 3], [3, 2, 2, 2, 2, 2, 3, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 2, 2, 2, 2, 2, 3], [3, 3, 3, 3, 3, 2, 3, 3, 3, 2, 2, 2, 2, 2, 3, 3, 3, 2, 3, 3, 3, 3, 3], [3, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3], [3, 3, 3, 3, 3, 3, 3, 2, 2, 2, 2, 3, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3], [1, 1, 1, 1, 1, 1, 3, 2, 2, 2, 3, 3, 3, 2, 2, 2, 3, 1, 1, 1, 1, 1, 1], [1, 1, 1, 1, 1, 1, 3, 3, 3, 2, 2, 2, 2, 2, 3, 3, 3, 1, 1, 1, 1, 1, 1], [1, 1, 1, 1, 1, 1, 3, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 1, 1, 1, 1, 1, 1], [1, 1, 1, 1, 1, 1, 3, 2, 2, 2, 3, 3, 3, 2, 2, 2, 3, 1, 1, 1, 1, 1, 1], [1, 1, 1, 1, 1, 1, 3, 2, 2, 4, 4, 4, 4, 4, 2, 2, 3, 1, 1, 1, 1, 1, 1], [1, 1, 1, 1, 1, 1, 3, 2, 4, 4, 4, 4, 4, 4, 4, 2, 3, 1, 1, 1, 1, 1, 1], [1, 1, 1, 1, 1, 1, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 1, 1, 1, 1, 1, 1]];
@@ -150,53 +151,6 @@ export function socket_text_init(socket: any) {
     return socketText;
 }
 
-export function notification_init() {
-    const notificationContainer = new PIXI.Container();
-    let notificationOffsetY = 0;
-
-    function notification(text: string) {
-        const notificationBar = new Graphics();
-        notificationBar.x = -5;
-        notificationBar.y = notificationOffsetY;
-
-        const notificationStyle = new PIXI.TextStyle({
-            fontFamily: "Arial",
-            fontSize: 21,
-            fill: "white",
-            align: "center",
-            stroke: "000000",
-            strokeThickness: 4
-        });
-        const notification = new PIXI.Text(text, notificationStyle);
-        const metrics = PIXI.TextMetrics.measureText(text, notificationStyle);
-
-        notificationBar.beginFill(0x000000, 0.5);
-        notificationBar.drawRoundedRect(0, 0, metrics.width + 10, 30, 5);
-        notificationBar.endFill();
-
-        notification.x = 0;
-        notification.y = notificationOffsetY;
-
-        notificationOffsetY += 40; // Increase the offset for the next notification
-
-        notificationContainer.addChild(notificationBar);
-        notificationContainer.addChild(notification);
-
-        setTimeout(() => {
-            notificationContainer.removeChild(notification);
-            notificationContainer.removeChild(notificationBar);
-
-            // Adjust the position of remaining notifications
-            notificationOffsetY -= 40;
-            notificationContainer.children.forEach((child: any) => {
-                child.y -= 40;
-            });
-        }, 10000);
-    }
-
-    return { notificationContainer, notification };
-}
-
 export function bullet_count_init() {
     const bulletCount = new PIXI.Text("Bullets: 0", {
         fontFamily: "Arial",
@@ -283,3 +237,5 @@ export function enemy_ui_init() {
     const container = new PIXI.Container();
     return container;
 }
+
+export { notification_init };

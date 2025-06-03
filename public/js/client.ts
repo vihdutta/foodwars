@@ -127,6 +127,16 @@ let username = " ";
 let lastPingSentTime: number = 0;
 let widthForHealthBar: number = 0;
 
+// Function to check if player is currently playing
+export function isPlayerPlaying(): boolean {
+  return playing;
+}
+
+// Function to get current player's username
+export function getCurrentUsername(): string {
+  return username;
+}
+
 // pixi containers and collections
 let UIElements = new PIXI.Container();
 let boundingBoxes: {[key: string]: any} = {};
@@ -570,7 +580,6 @@ app.ticker.add(() => {
     inventory,
     healthBar, 
     healthBarValue, 
-    notificationContainer,
     bulletCount, 
     pingText, 
     wallCount, 
@@ -689,21 +698,18 @@ UIElements.addChild(usernameText);
 UIElements.addChild(timerText);
 
 // add containers to stage
-app.stage.addChild(notificationContainer);
-// dimRectangle is now null - using HTML dimming system instead
+if (notificationContainer) {
+  app.stage.addChild(notificationContainer);
+}
+
 
 // show menu dimmer initially (homescreen)
 showMenuDimmer();
-
-/**
- * handles UI layout on window resize
- */
 function layoutUI(): void {
   const w = app.screen.width;
   const h = app.screen.height;
-  const pad = 0.02; // preserve exact math
+  const pad = 0.02;
 
-  // position centering test element (preserve exact math)
   centering_test.position.set(
     w * pad,
     h * (1 - pad) - centering_test.height

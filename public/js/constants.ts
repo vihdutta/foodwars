@@ -17,6 +17,17 @@ export const GLASS_BACKGROUND_OPACITY = 'rgba(255, 255, 255, 0.1)';
 // glass effect border opacity
 export const GLASS_BORDER_OPACITY = 'rgba(255, 255, 255, 0.2)';
 
+// ===== NOTIFICATION COLORS =====
+
+export const NOTIFICATION_COLORS = {
+  // Glass base styling - greyish background
+  GLASS_BASE: 'backdrop-blur-sm bg-gray-900/30 border border-gray-600/30',
+  
+  // Notification text colors
+  TEXT_DEFAULT: 'text-white',
+  TEXT_KILLER: 'text-red-300'
+} as const;
+
 // ===== TIMING CONSTANTS =====
 
 // death screen auto-respawn countdown in seconds
