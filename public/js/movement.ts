@@ -10,6 +10,7 @@ export const keyboard = {
     s: false,
     d: false,
     shift: false,
+    r: false,
 };
 
 export function handleMouseMove(event: MouseEvent) {

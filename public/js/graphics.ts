@@ -233,6 +233,35 @@ export function timer_init() {
     return timerText;
 }
 
+export function ammo_display_init() {
+    const ammoText = new PIXI.Text("30/240", {
+        fontFamily: "Fredoka One",
+        fontSize: 32,
+        fill: "ffffff",
+        stroke: "000000",
+        strokeThickness: 4,
+        fontWeight: "bold"
+    });
+    ammoText.x = 0;
+    ammoText.y = 0;
+    return ammoText;
+}
+
+export function reload_indicator_init() {
+    const reloadText = new PIXI.Text("RELOADING...", {
+        fontFamily: "Fredoka One",
+        fontSize: 28,
+        fill: "ff6666",
+        stroke: "000000",
+        strokeThickness: 4,
+        fontWeight: "bold"
+    });
+    reloadText.x = 0;
+    reloadText.y = 0;
+    reloadText.visible = false; // Hidden by default
+    return reloadText;
+}
+
 export function enemy_ui_init() {
     const container = new PIXI.Container();
     return container;

@@ -8,9 +8,7 @@ import {
   background_init,
   menu_dimmer_init, 
   player_init,
-  coordinates_text_init, 
   fps_text_init,
-  inventory_init, 
   health_bar_init, 
   health_bar_value_init,
   socket_text_init, 
@@ -21,7 +19,9 @@ import {
   centering_test_init, 
   username_init,
   timer_init,
-  enemy_ui_init
+  enemy_ui_init,
+  ammo_display_init,
+  reload_indicator_init
 } from './graphics.js';
 
 // development and utility imports
@@ -58,6 +58,19 @@ import { showDeathScreen, hideDeathScreen, forceCloseDeathScreen } from './death
 
 // styling imports
 import { showMenuDimmer, hideMenuDimmer } from './styling.js';
+
+// ammo system imports
+import {
+  canFire,
+  fireBullet,
+  canReload,
+  startReload,
+  updateReload,
+  isReloading,
+  updateAmmoDisplay,
+  updateReloadIndicator,
+  resetAmmo
+} from './ammo-system.js';
 
 // ===== TYPES AND INTERFACES =====
 
@@ -183,9 +196,7 @@ app.stage.addChild(enemyUIContainer);
 let wallsData: Record<string, WallData> = await background_init(app, socket);
 const player = await player_init();
 const dimRectangle = menu_dimmer_init(player); // legacy - returns null now
-const coordinatesText = coordinates_text_init(player);
 const FPSText = fps_text_init(app, player);
-const inventory = inventory_init();
 const healthBar = health_bar_init();
 const healthBarValue = health_bar_value_init();
 const socketText = socket_text_init(socket);
@@ -196,6 +207,8 @@ const wallCount = wall_count_init();
 const centering_test = centering_test_init();
 const usernameText = username_init();
 const timerText = timer_init();
+const ammoDisplay = ammo_display_init();
+const reloadIndicator = reload_indicator_init();
 
 // ===== EVENT LISTENERS =====
 
@@ -388,6 +401,26 @@ socket.on("clientUpdateSelf", (playerData: any) => {
  */
 setInterval(() => {
   if (playing) {
+    // handle reload input
+    if (keyboard.r) {
+      startReload();
+      keyboard.r = false; // Prevent continuous reloading while holding R
+    }
+    
+    // update reload progress
+    updateReload();
+    
+    // update ammo UI
+    updateAmmoDisplay(ammoDisplay);
+    updateReloadIndicator(reloadIndicator);
+    
+    // attempt to fire if mouse button is pressed
+    // ammo system handles cooldown and availability internally
+    let actuallyFired = false;
+    if (mouse.mb1) {
+      actuallyFired = fireBullet();
+    }
+    
     socket.emit("serverUpdateSelf", {
       id: socket.id,
       username: username,
@@ -396,7 +429,7 @@ setInterval(() => {
         mouse.y - app.renderer.height / 2,
         mouse.x - app.renderer.width / 2
       ) + Math.PI / 2,
-      mb1: mouse.mb1,
+      mb1: actuallyFired, // Only send true if we actually fired (consumed ammo)
       keyboard: keyboard
     });
   }
@@ -574,17 +607,19 @@ app.ticker.add(() => {
     camera, 
     UIElements,
     null, // dimRectangle is now null - using HTML dimming system
-    coordinatesText,
+    null, // coordinatesText is now null - removing coordinates text
     FPSText, 
     socketText, 
-    inventory,
+    null, // inventory is now null - removing inventory
     healthBar, 
     healthBarValue, 
     bulletCount, 
     pingText, 
     wallCount, 
     usernameText,
-    timerText
+    timerText,
+    ammoDisplay,
+    reloadIndicator
   );
 });
 
@@ -597,6 +632,9 @@ const spawnButton = document.getElementById("spawn");
 if (spawnButton) {
   spawnButton.addEventListener("click", function () {
     playing = true;
+    
+    // reset ammo to starting state
+    resetAmmo();
     
     // hide death screen if it's showing
     hideDeathScreen();
@@ -685,10 +723,8 @@ document.body.appendChild(app.view);
 
 // add UI elements to container
 UIElements.addChild(socketText);
-UIElements.addChild(inventory);
 UIElements.addChild(healthBar);
 UIElements.addChild(healthBarValue);
-UIElements.addChild(coordinatesText);
 UIElements.addChild(FPSText);
 UIElements.addChild(bulletCount);
 UIElements.addChild(pingText);
@@ -696,6 +732,8 @@ UIElements.addChild(wallCount);
 UIElements.addChild(centering_test);
 UIElements.addChild(usernameText);
 UIElements.addChild(timerText);
+UIElements.addChild(ammoDisplay);
+UIElements.addChild(reloadIndicator);
 
 // add containers to stage
 if (notificationContainer) {

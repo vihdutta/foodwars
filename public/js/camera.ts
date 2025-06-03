@@ -18,7 +18,7 @@ export function hideSpritesOutsideScreen(app: any) {
     });
 }
 
-export function updateCamera(app: any, player: any, widthForHealthBar: number, camera: any, UIElements: any, dimRectangle: any, coordinatesText: any, FPSText: any, socketText: any, inventory: any, healthBar: any, healthBarValue: any, bulletCount: any, pingText: any, wallCount: any, usernameText: any, timerText: any) {
+export function updateCamera(app: any, player: any, widthForHealthBar: number, camera: any, UIElements: any, dimRectangle: any, coordinatesText: any, FPSText: any, socketText: any, inventory: any, healthBar: any, healthBarValue: any, bulletCount: any, pingText: any, wallCount: any, usernameText: any, timerText: any, ammoDisplay: any, reloadIndicator: any) {
     hideSpritesOutsideScreen(app);
     // Adjust the camera position to keep the player in the middle
     camera.x = player.x;
@@ -28,19 +28,11 @@ export function updateCamera(app: any, player: any, widthForHealthBar: number, c
 
     // dimming now handled by HTML/CSS system - no PIXI.js dimRectangle needed
 
-    coordinatesText.x = camera.x + (window.innerWidth/2) / camera.scale - coordinatesText.width;
-    coordinatesText.y = camera.y - (window.innerHeight/2) / camera.scale + window.innerHeight - coordinatesText.height - 10;
-
     FPSText.x = camera.x - (window.innerWidth/2) / camera.scale + 20;
     FPSText.y = camera.y - (window.innerHeight/2) / camera.scale + 10;
 
     socketText.x = camera.x + (window.innerWidth/2) / camera.scale - socketText.width;
     socketText.y = camera.y - (window.innerHeight/2) / camera.scale + window.innerHeight - socketText.height;
-
-    inventory.width = 500 * Math.min(100, window.innerWidth / 1500);
-    inventory.height = 50 * Math.min(100, window.innerWidth / 1500);
-    inventory.x = camera.x + (window.innerWidth/2) / camera.scale - window.innerWidth/2 - inventory.width/2;
-    inventory.y = camera.y - (window.innerHeight/2) / camera.scale + window.innerHeight - inventory.height;
 
     healthBar.width = 60 * Math.min(100, window.innerWidth / 1500);
     healthBar.height = 6 * Math.min(100, window.innerWidth / 1500);
@@ -66,5 +58,13 @@ export function updateCamera(app: any, player: any, widthForHealthBar: number, c
     // Position timer at the top center of the screen
     timerText.x = camera.x;
     timerText.y = camera.y - (window.innerHeight/2) / camera.scale + 20;
+
+    // Position ammo display where coordinates used to be (bottom right)
+    ammoDisplay.x = camera.x + (window.innerWidth/2) / camera.scale - ammoDisplay.width;
+    ammoDisplay.y = camera.y - (window.innerHeight/2) / camera.scale + window.innerHeight - ammoDisplay.height - 10;
+
+    // Position reload indicator above ammo display
+    reloadIndicator.x = camera.x + (window.innerWidth/2) / camera.scale - reloadIndicator.width;
+    reloadIndicator.y = camera.y - (window.innerHeight/2) / camera.scale + window.innerHeight - reloadIndicator.height - 50;
 }
 
