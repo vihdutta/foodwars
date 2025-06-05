@@ -402,7 +402,13 @@ io.on("connection", (socket: Socket) => {
     socket.join(roomId);
     socket.data.roomId = roomId;
     console.log(`🏠 Socket ${socket.id} joined room ${roomId}`);
-    getGame(roomId); // initialize game state if needed
+    const game = getGame(roomId);
+    
+    // if joining a room where the game has ended, reset it immediately
+    if (game.gameEnded) {
+      console.log(`🔄 Resetting ended game for new player in room ${roomId}`);
+      resetGameState(roomId, game);
+    }
   });
 
   /**

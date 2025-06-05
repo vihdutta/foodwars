@@ -362,7 +362,7 @@ socket.on("clientUpdateAllEnemies", (enemiesData: Record<string, any>) => {
 socket.on("clientUpdateSelf", (playerData: any) => {
   if (playing) {
     // update health bar or handle death
-    if (playerData.health <= 100 && playerData.health > 0) {
+    if (playerData.health > 0) {
       // preserve exact math: health * 0.6 - 2
       widthForHealthBar = playerData.health * 0.6 - 2;
     } else {
