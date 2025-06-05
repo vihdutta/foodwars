@@ -11,6 +11,7 @@ export const keyboard = {
     d: false,
     shift: false,
     r: false,
+    t: false, // leaderboard visibility key
 };
 
 export function handleMouseMove(event: MouseEvent) {

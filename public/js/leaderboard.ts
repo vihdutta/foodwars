@@ -284,7 +284,7 @@ export class LeaderboardManager {
       case 'kdr':
         return entry.avg_kdr.toFixed(2);
       case 'accuracy':
-        return (entry.avg_accuracy * 100).toFixed(1) + '%';
+        return entry.avg_accuracy.toFixed(1) + '%';
       case 'time_alive':
         return this.formatTime(entry.total_time_alive);
       default:

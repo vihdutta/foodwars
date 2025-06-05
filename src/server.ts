@@ -22,6 +22,8 @@ import {
   updatePlayerStat, 
   initializePlayerStats, 
   clearRoomStats,
+  removePlayerStats,
+  purgeDisconnectedPlayers,
   redisHealthCheck 
 } from "./services/redis.js";
 
@@ -493,6 +495,54 @@ io.on("connection", (socket: Socket) => {
   });
 
   /**
+   * handle real-time leaderboard data request
+   */
+  socket.on("requestRealtimeLeaderboard", async () => {
+    const roomId = socket.data.roomId as string;
+    if (!roomId) return;
+
+    try {
+      // get all player stats from Redis for this room
+      const allStats = await getAllPlayerStats(roomId);
+      
+      // get current game state for death status
+      const game = getGame(roomId);
+      
+      // format leaderboard data
+      const leaderboardData = allStats.map(playerStat => ({
+        socketId: playerStat.socketId,
+        username: playerStat.username,
+        kills: playerStat.kills,
+        deaths: playerStat.deaths,
+        isDead: !game.players[playerStat.socketId] || game.players[playerStat.socketId].health <= 0
+      }));
+
+      // determine server region (simple implementation - can be enhanced)
+      const serverRegion = process.env.SERVER_REGION || 'US-East';
+      
+      // get ping from last ping measurement (simplified)
+      const latency = 0; // placeholder - could be enhanced to track real latency
+      
+      socket.emit("realtimeLeaderboardData", {
+        players: leaderboardData,
+        serverInfo: {
+          region: serverRegion,
+          latency: latency
+        }
+      });
+    } catch (error) {
+      console.error(`❌ Failed to fetch leaderboard data for room ${roomId}:`, error);
+      socket.emit("realtimeLeaderboardData", {
+        players: [],
+        serverInfo: {
+          region: 'Unknown',
+          latency: 999
+        }
+      });
+    }
+  });
+
+  /**
    * handle wall addition (for level editing)
    */
   socket.on("addWall", (wallData: WallData) => {
@@ -513,6 +563,11 @@ io.on("connection", (socket: Socket) => {
     const game = getGame(roomId);
     delete game.players[socket.id];
     delete game.lastPlayersShotTime[socket.id];
+    
+    // Remove player from Redis immediately
+    removePlayerStats(roomId, socket.id).catch(error => {
+      console.error(`❌ Failed to remove player ${socket.id} from Redis on disconnect:`, error);
+    });
     
     // Unregister authenticated user
     unregisterUser(socket.id);
@@ -590,6 +645,32 @@ setInterval(() => {
   // Clean up inactive rooms
   cleanupInactiveRooms();
 }, GAME_CONFIG.STATS_UPDATE_RATE);
+
+/**
+ * cleanup disconnected players from Redis every 5 seconds
+ */
+setInterval(async () => {
+  for (const [roomId, game] of Object.entries(games)) {
+    const connectedPlayerIds = Object.keys(game.players);
+    
+    // Only clean up if there are any connected players in the room
+    // This prevents unnecessary Redis operations for empty rooms
+    if (connectedPlayerIds.length > 0) {
+      try {
+        await purgeDisconnectedPlayers(roomId, connectedPlayerIds);
+      } catch (error) {
+        console.error(`❌ Failed to purge disconnected players for room ${roomId}:`, error);
+      }
+    } else {
+      // If no players are connected but room exists, still clean Redis for this room
+      try {
+        await purgeDisconnectedPlayers(roomId, []);
+      } catch (error) {
+        console.error(`❌ Failed to purge empty room ${roomId} from Redis:`, error);
+      }
+    }
+  }
+}, 5000); // Run every 5 seconds
 
 // ===== SERVER STARTUP =====
 

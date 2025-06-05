@@ -72,6 +72,9 @@ import {
   resetAmmo
 } from './ammo-system.js';
 
+// real-time leaderboard imports
+import { RealtimeLeaderboardManager } from './realtime-leaderboard.js';
+
 // ===== TYPES AND INTERFACES =====
 
 interface EnemyUI {
@@ -209,6 +212,9 @@ const usernameText = username_init();
 const timerText = timer_init();
 const ammoDisplay = ammo_display_init();
 const reloadIndicator = reload_indicator_init();
+
+// initialize real-time leaderboard manager
+const realtimeLeaderboard = new RealtimeLeaderboardManager();
 
 // ===== EVENT LISTENERS =====
 
@@ -407,6 +413,19 @@ setInterval(() => {
       keyboard.r = false; // Prevent continuous reloading while holding R
     }
     
+    // handle leaderboard visibility
+    if (keyboard.t) {
+      if (!realtimeLeaderboard.getVisibility()) {
+        realtimeLeaderboard.show();
+        // request fresh leaderboard data
+        socket.emit("requestRealtimeLeaderboard");
+      }
+    } else {
+      if (realtimeLeaderboard.getVisibility()) {
+        realtimeLeaderboard.hide();
+      }
+    }
+    
     // update reload progress
     updateReload();
     
@@ -434,6 +453,15 @@ setInterval(() => {
     });
   }
 }, 10);
+
+/**
+ * update leaderboard data periodically when visible
+ */
+setInterval(() => {
+  if (playing && realtimeLeaderboard.getVisibility()) {
+    socket.emit("requestRealtimeLeaderboard");
+  }
+}, 1000); // Update every second when leaderboard is visible
 
 // ===== BULLET SYSTEM =====
 
@@ -587,6 +615,31 @@ socket.on("gameEnded", (data: { finalStats: Array<{ username: string; stats: Pla
     
     showGameEndedScreen(playerStats, data.finalStats as any);
   });
+});
+
+/**
+ * handles real-time leaderboard data from server
+ */
+socket.on("realtimeLeaderboardData", (data: { 
+  players: Array<{
+    socketId: string;
+    username: string;
+    kills: number;
+    deaths: number;
+    isDead: boolean;
+  }>;
+  serverInfo: {
+    region: string;
+    latency: number;
+  };
+}) => {
+  // map server data to client interface by adding isCurrentPlayer field
+  const mappedPlayers = data.players.map(player => ({
+    ...player,
+    isCurrentPlayer: false // this will be set correctly in updateData method
+  }));
+  
+  realtimeLeaderboard.updateData(mappedPlayers, socket.id, data.serverInfo);
 });
 
 // ===== CAMERA SYSTEM =====

@@ -275,6 +275,70 @@ export async function clearRoomStats(roomId: string): Promise<void> {
 }
 
 /**
+ * removes a specific player's stats from Redis
+ */
+export async function removePlayerStats(
+  roomId: string,
+  playerId: string
+): Promise<void> {
+  try {
+    const client = getRedisClient();
+    const key = `room:${roomId}:player:${playerId}:stats`;
+    
+    const deleted = await client.del(key);
+    if (deleted > 0) {
+      console.log(`🗑️ Removed disconnected player ${playerId} from room ${roomId} Redis stats`);
+    }
+  } catch (error) {
+    console.error(`❌ Failed to remove player stats for ${playerId} in room ${roomId}:`, error);
+    throw error;
+  }
+}
+
+/**
+ * purges disconnected players from Redis for a specific room
+ * compares Redis stored players with currently connected players
+ */
+export async function purgeDisconnectedPlayers(
+  roomId: string,
+  connectedPlayerIds: string[]
+): Promise<void> {
+  try {
+    const client = getRedisClient();
+    const pattern = `room:${roomId}:player:*:stats`;
+    
+    const keys = await client.keys(pattern);
+    const redisPlayerIds: string[] = [];
+    
+    // Extract player IDs from Redis keys
+    for (const key of keys) {
+      const playerId = key.split(':')[3]; // room:roomId:player:playerId:stats
+      if (playerId) {
+        redisPlayerIds.push(playerId);
+      }
+    }
+    
+    // Find players in Redis who are not connected
+    const disconnectedPlayerIds = redisPlayerIds.filter(
+      playerId => !connectedPlayerIds.includes(playerId)
+    );
+    
+    // Remove disconnected players from Redis
+    if (disconnectedPlayerIds.length > 0) {
+      const keysToDelete = disconnectedPlayerIds.map(
+        playerId => `room:${roomId}:player:${playerId}:stats`
+      );
+      
+      await client.del(keysToDelete);
+      console.log(`🧹 Purged ${disconnectedPlayerIds.length} disconnected players from room ${roomId} Redis: [${disconnectedPlayerIds.join(', ')}]`);
+    }
+  } catch (error) {
+    console.error(`❌ Failed to purge disconnected players for room ${roomId}:`, error);
+    throw error;
+  }
+}
+
+/**
  * health check for Redis connection
  */
 export async function redisHealthCheck(): Promise<boolean> {
