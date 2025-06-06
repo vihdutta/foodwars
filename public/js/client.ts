@@ -24,6 +24,9 @@ import {
   reload_indicator_init
 } from './graphics.js';
 
+// text overlay imports
+import { createVersionOverlay } from './text-overlays.js';
+
 // development and utility imports
 import { 
   handleDevBoundingBox, 
@@ -170,11 +173,46 @@ ENEMY_BAR_CONFIG = renderingConfig?.ENEMY_BAR || {
 // ===== SOCKET SETUP =====
 
 /**
- * extracts room ID from URL hash, defaults to "0"
+ * extracts room ID from URL hash, defaults to "us-east:default"
+ * supports both legacy format (#roomId) and new region format (#us-east:roomId)
+ * Returns the full room string for server communication
  */
 function getRoomFromHash(): string {
   const hash = window.location.hash;
-  return hash.length > 1 ? hash.slice(1) : "0";
+  if (hash.length <= 1) return "us-east:default";
+  
+  const hashValue = hash.slice(1); // remove the # symbol
+  
+  // Check if it's the new region format: us-east:roomId
+  if (hashValue.includes(':')) {
+    // Already in the correct format
+    return hashValue;
+  }
+  
+  // Legacy format - add region prefix
+  return `us-east:${hashValue}`;
+}
+
+/**
+ * extracts just the room ID part for display in the input box
+ */
+function getRoomIdForInput(): string {
+  const hash = window.location.hash;
+  if (hash.length <= 1) return "default";
+  
+  const hashValue = hash.slice(1); // remove the # symbol
+  
+  // Check if it's the new region format: us-east:roomId
+  if (hashValue.includes(':')) {
+    const parts = hashValue.split(':');
+    if (parts.length >= 2) {
+      // Extract just the room ID part for the input box
+      return parts.slice(1).join(':');
+    }
+  }
+  
+  // Legacy format or direct room ID
+  return hashValue;
 }
 
 // socket connection configuration
@@ -800,7 +838,6 @@ if (notificationContainer) {
   app.stage.addChild(notificationContainer);
 }
 
-
 // show menu dimmer initially (homescreen)
 showMenuDimmer();
 function layoutUI(): void {
@@ -817,4 +854,7 @@ function layoutUI(): void {
 // initial layout and resize listener
 layoutUI();
 window.addEventListener("resize", layoutUI);
+
+// call createVersionOverlay after UI elements are initialized
+createVersionOverlay();
 

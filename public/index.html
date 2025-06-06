@@ -164,53 +164,49 @@
             <span class="text-white font-semibold">Join Kitchen</span>
           </div>
           
-          <div class="flex gap-2">
+          <div class="flex gap-2 mb-3">
             <input type="text"
                    id="roomIdInput"
                    class="flex-1 bg-white/20 border-2 border-white/30 rounded-lg px-3 py-2 text-white placeholder-white/70 focus:border-chef-yellow focus:outline-none text-center font-game text-sm"
                    maxlength="8"
-                   placeholder="Room ID">
+                   placeholder="Insert any kitchen name here!">
             
             <button id="joinRoomBtn"
-                    class="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white px-4 py-2 rounded-lg font-semibold transition-all duration-300 flex items-center gap-1">
+                    class="bg-gradient-to-r from-chef-orange to-red-500 hover:from-chef-orange/90 hover:to-red-500/90 text-white px-4 py-2 rounded-lg font-semibold transition-all duration-300 flex items-center gap-1">
               <i class="fas fa-door-open text-sm"></i>
               Join
             </button>
           </div>
+          
+          <!-- Copy Kitchen Link Button -->
+          <button id="copyKitchenLinkBtn"
+                  class="w-full bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 text-white px-4 py-2 rounded-lg font-semibold transition-all duration-300 flex items-center justify-center gap-2">
+            <i class="fas fa-link text-sm"></i>
+            Copy Kitchen Link
+          </button>
+          
+          <!-- Success message container -->
+          <div id="kitchen-link-feedback" class="mt-2 hidden">
+            <div class="text-green-400 text-xs font-semibold">
+              <i class="fas fa-check mr-1"></i>
+              <span id="kitchen-link-message">Kitchen link copied to clipboard!</span>
+            </div>
+          </div>
         </div>
       </div>
 
-      <!-- Game Stats/Info Panel -->
-      <div class="mt-6 flex justify-center gap-4">
-        <div class="glass-effect rounded-xl p-3 text-center">
-          <i class="fas fa-trophy text-chef-yellow text-lg mb-1"></i>
-          <div class="text-white text-sm font-semibold">Battles Won</div>
-          <div class="text-chef-yellow font-bold">0</div>
-        </div>
-        
-        <div class="glass-effect rounded-xl p-3 text-center">
-          <i class="fas fa-fire text-chef-red text-lg mb-1"></i>
-          <div class="text-white text-sm font-semibold">Heat Level</div>
-          <div class="text-chef-red font-bold">🌶️</div>
-        </div>
-        
-        <div class="glass-effect rounded-xl p-3 text-center">
-          <i class="fas fa-star text-chef-yellow text-lg mb-1"></i>
-          <div class="text-white text-sm font-semibold">Chef Rating</div>
-          <div class="text-chef-yellow font-bold">⭐⭐⭐</div>
+      <!-- Game Controls Panel (replaces Game Stats/Info Panel) -->
+      <div class="mt-6 flex justify-center">
+        <div class="glass-effect rounded-xl p-4 text-center max-w-lg">
+          <div class="text-white text-sm">
+            <span class="text-chef-yellow font-semibold">🎮 Controls:</span>
+            <span class="mx-2">WASD to move</span>
+            <span class="mx-2">🍳 Collect ingredients</span>
+            <span class="mx-2">⚔️ Battle other chefs</span>
+          </div>
         </div>
       </div>
     </div>
-    <!-- Game Instructions (Bottom) -->
-    <div class="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-30">
-      <div class="glass-effect rounded-xl p-4 text-center max-w-lg">
-        <div class="text-white text-sm">
-          <span class="text-chef-yellow font-semibold">🎮 Controls:</span>
-          <span class="mx-2">WASD to move</span>
-          <span class="mx-2">🍳 Collect ingredients</span>
-          <span class="mx-2">⚔️ Battle other chefs</span>
-        </div>
-      </div>
     </div>
 
   </div>
@@ -231,6 +227,114 @@
     
     // Make leaderboard manager globally accessible for debugging
     window.leaderboardManager = leaderboardManager;
+    
+    // Simple fallback button functionality
+    document.addEventListener('DOMContentLoaded', () => {
+      const joinRoomBtn = document.getElementById('joinRoomBtn');
+      const roomIdInput = document.getElementById('roomIdInput');
+      const copyKitchenLinkBtn = document.getElementById('copyKitchenLinkBtn');
+      const kitchenLinkFeedback = document.getElementById('kitchen-link-feedback');
+      const kitchenLinkMessage = document.getElementById('kitchen-link-message');
+      
+      // Function to extract room ID for input
+      function getRoomIdForInput() {
+        const hash = window.location.hash;
+        if (hash.length <= 1) return "default";
+        
+        const hashValue = hash.slice(1); // remove the # symbol
+        
+        // Check if it's the new region format: us-east:roomId
+        if (hashValue.includes(':')) {
+          const parts = hashValue.split(':');
+          if (parts.length >= 2) {
+            // Extract just the room ID part for the input box
+            return parts.slice(1).join(':');
+          }
+        }
+        
+        // Legacy format or direct room ID
+        return hashValue;
+      }
+      
+      // Populate room input with current room ID
+      if (roomIdInput) {
+        const currentRoomId = getRoomIdForInput();
+        roomIdInput.value = currentRoomId;
+      }
+      
+      // Generate room ID function
+      function generateRoomId() {
+        const adjectives = ['SPICY', 'GOLDEN', 'CRISPY', 'FRESH', 'SMOKY', 'ZESTY', 'TENDER', 'JUICY'];
+        const nouns = ['CHEF', 'GRILL', 'FEAST', 'DISH', 'COOK', 'FIRE', 'MEAL', 'BITE'];
+        
+        const adjective = adjectives[Math.floor(Math.random() * adjectives.length)];
+        const noun = nouns[Math.floor(Math.random() * nouns.length)];
+        const number = Math.floor(Math.random() * 999) + 1;
+        
+        return `${adjective}${noun}${number}`;
+      }
+      
+      // Show success message
+      function showSuccessMessage(message) {
+        if (kitchenLinkMessage && kitchenLinkFeedback) {
+          kitchenLinkMessage.textContent = message;
+          kitchenLinkFeedback.classList.remove('hidden');
+          
+          // Hide after 3 seconds
+          setTimeout(() => {
+            kitchenLinkFeedback.classList.add('hidden');
+          }, 3000);
+        }
+      }
+      
+      // Join room functionality
+      if (joinRoomBtn && roomIdInput) {
+        joinRoomBtn.addEventListener('click', () => {
+          const roomId = roomIdInput.value.trim();
+          if (roomId) {
+            const domain = window.location.origin;
+            const region = 'us-east';
+            const kitchenLink = `${domain}/#${region}:${roomId}`;
+            
+            // Change URL and force refresh
+            window.location.href = kitchenLink;
+            window.location.reload(true);
+          } else {
+            alert('Please enter a valid room ID');
+          }
+        });
+      }
+      
+      // Copy kitchen link functionality
+      if (copyKitchenLinkBtn) {
+        copyKitchenLinkBtn.addEventListener('click', async () => {
+          let roomId = roomIdInput ? roomIdInput.value.trim() : '';
+          
+          // Require user to enter a room ID first
+          if (!roomId) {
+            alert('Please enter a kitchen name first!');
+            return;
+          }
+          
+          const domain = window.location.origin;
+          const region = 'us-east';
+          const kitchenLink = `${domain}/#${region}:${roomId}`;
+          
+          try {
+            await navigator.clipboard.writeText(kitchenLink);
+            showSuccessMessage('Kitchen link copied to clipboard!');
+          } catch (err) {
+            const textArea = document.createElement('textarea');
+            textArea.value = kitchenLink;
+            document.body.appendChild(textArea);
+            textArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textArea);
+            showSuccessMessage('Kitchen link copied to clipboard!');
+          }
+        });
+      }
+    });
   </script>
 </body>
 </html>
