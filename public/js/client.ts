@@ -238,7 +238,11 @@ const app = new Application(PIXI_CONFIG);
 
 // initialize enemy UI container
 const enemyUIContainer = enemy_ui_init();
+enemyUIContainer.zIndex = 1000; // Set high z-index to render above everything
 app.stage.addChild(enemyUIContainer);
+
+// Enable z-index sorting on the stage
+app.stage.sortableChildren = true;
 
 // initialize game world and UI elements
 let wallsData: Record<string, WallData> = await background_init(app, socket);
@@ -338,6 +342,7 @@ function renderEnemies(enemiesData: any): void {
       // update username text
       usernameText.text = enemyData.username || "Enemy";
       usernameText.anchor.set(GAME_CONSTANTS.ENEMY_ANCHOR, 0);
+      usernameText.x = GAME_CONSTANTS.ENEMY_POSITION_OFFSET_X; // center the username text on the enemy sprite
       usernameText.y = 0;
       
       // position health bar elements

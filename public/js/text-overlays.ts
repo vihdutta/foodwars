@@ -255,7 +255,7 @@ export function createTimerOverlay(): HTMLElement {
  * Creates version overlay
  */
 export function createVersionOverlay(): HTMLElement {
-  return textOverlayManager.createOverlay('version', 'v0.9.0', 'BOTTOM_LEFT', 'SECONDARY', {
+  return textOverlayManager.createOverlay('version', 'v0.9.1', 'BOTTOM_LEFT', 'SECONDARY', {
     customStyles: {
       fontSize: '0.75rem',
       opacity: '0.6',
