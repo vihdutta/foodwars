@@ -5,17 +5,7 @@
 
 // Type imports
 import type { ServerPlayer, Coordinate } from "../types/game.js";
-
-// ===== CONSTANTS =====
-
-// predefined spawn points across the map [x, y]
-const SPAWN_POINTS = [
-  [250, 2100],
-  [2650, 2100], 
-  [1450, 2100],
-  [1450, 250],
-  [1450, 3950]
-];
+import { SPAWN_POINTS } from "../constants.js";
 
 // ===== SPAWN LOGIC =====
 
@@ -31,7 +21,7 @@ export function bestSpawnPoint(players: Record<string, ServerPlayer>): Coordinat
   }
 
   let maxDistance = 0;
-  let bestSpawn = SPAWN_POINTS[0];
+  let bestSpawn: Coordinate = SPAWN_POINTS[0] as Coordinate;
 
   // evaluate each spawn point to find the one farthest from all players
   SPAWN_POINTS.forEach((spawnPoint) => {
@@ -52,9 +42,9 @@ export function bestSpawnPoint(players: Record<string, ServerPlayer>): Coordinat
     // update best spawn if this point is farther from players
     if (minDistanceToAnyPlayer > maxDistance) {
       maxDistance = minDistanceToAnyPlayer;
-      bestSpawn = spawnPoint;
+      bestSpawn = spawnPoint as Coordinate;
     }
   });
 
-  return bestSpawn as Coordinate;
-}
+  return bestSpawn;
+} 

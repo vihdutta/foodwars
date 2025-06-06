@@ -11,6 +11,19 @@ import { createServer } from "http";
 import { Server, Socket } from "socket.io";
 import crypto from "crypto";
 
+// Constants import
+import { 
+  GAME_CONFIG, 
+  SERVER_CONFIG, 
+  AMMO_CONFIG,
+  VISUAL_CONFIG,
+  NOTIFICATION_COLORS,
+  RENDERING_CONFIG,
+  SPAWN_POINTS,
+  DEFAULT_STATS,
+  CALCULATED_VALUES
+} from "./constants.js";
+
 // Redis service import
 import { 
   initRedis, 
@@ -67,25 +80,6 @@ import type {
   WallData,
   RoomEmitter
 } from "./types/game.js";
-
-// ===== CONSTANTS =====
-
-const GAME_CONFIG = {
-  PLAYER_SIZE: 70,
-  PLAYER_HEALTH: 100,
-  BULLET_WIDTH: 20,
-  BULLET_HEIGHT: 5,
-  BULLET_OFFSET: 30,
-  BULLET_SPREAD: 0.05,
-  SHOOTING_COOLDOWN: 1000 / 10, // 10 shots per second
-  ENEMY_UPDATE_RATE: 1000 / 50, // 50 FPS
-  BULLET_UPDATE_RATE: 1000 / 50, // 50 FPS
-  STATS_UPDATE_RATE: 1000, // 1 second
-  PHYSICS_DELTA_TIME: 1 / 60, // 60 FPS physics
-  GAME_DURATION_MINUTES: 5,
-} as const;
-
-const PORT = process.env.PORT || 8080;
 
 // ===== GAME STATE MANAGEMENT =====
 
@@ -201,42 +195,43 @@ async function checkGameEnd(roomId: string, game: GameState, roomEmitter: RoomEm
     console.log(`🏁 Game ended for room ${roomId}`);
     
     try {
-      // Get all player stats from Redis
-      const finalStats = await getAllPlayerStats(roomId);
-      
-      // Save stats to Supabase for authenticated users
-      const playerSocketIds = Object.keys(game.players);
-      if (playerSocketIds.length > 0) {
-        try {
-          await saveEndGameStats(roomId, playerSocketIds);
-        } catch (error) {
-          console.error(`❌ Failed to save stats to Supabase for room ${roomId}:`, error);
-        }
-      }
-      
-      // Calculate final time alive for all players
+      // Calculate final time alive for all players BEFORE saving to ensure accurate stats
       if (game.gameStartTime && game.gameEndTime) {
+        console.log(`⏱️ Calculating final time alive for ${Object.keys(game.players).length} players`);
+        
         // Update time alive for all currently alive players
         for (const player of Object.values(game.players)) {
           if (player.health > 0) {
             const timeAliveThisLife = Math.floor((game.gameEndTime - player.sessionStartTime) / 1000);
+            console.log(`⏱️ Adding ${timeAliveThisLife}s time alive to player ${player.username} (${player.id})`);
             await incrementPlayerStat(roomId, player.id, 'timeAlive', timeAliveThisLife);
           }
         }
-        
-        // Get updated stats after time calculation
-        const updatedStats = await getAllPlayerStats(roomId);
-        
-        // Send game end event with comprehensive stats (by socket ID)
-        roomEmitter.emit("gameEnded", {
-          finalStats: updatedStats
-        });
-      } else {
-        // Send current stats if no timing info available
-        roomEmitter.emit("gameEnded", {
-          finalStats: finalStats
-        });
       }
+      
+      // Get all player stats from Redis (after time calculations)
+      const finalStats = await getAllPlayerStats(roomId);
+      console.log(`📊 Retrieved final stats for ${finalStats.length} players from Redis`);
+      
+      // Save stats to Supabase for authenticated users
+      const playerSocketIds = Object.keys(game.players);
+      console.log(`📊 Attempting to save stats for players: [${playerSocketIds.join(', ')}]`);
+      
+      if (playerSocketIds.length > 0) {
+        try {
+          const saveResult = await saveEndGameStats(roomId, playerSocketIds);
+          console.log(`📊 Stats save result:`, JSON.stringify(saveResult, null, 2));
+        } catch (error) {
+          console.error(`❌ Failed to save stats to Supabase for room ${roomId}:`, error);
+        }
+      } else {
+        console.log(`📊 No players to save stats for in room ${roomId}`);
+      }
+      
+      // Send game end event with comprehensive stats (by socket ID)
+      roomEmitter.emit("gameEnded", {
+        finalStats: finalStats
+      });
       
       // Reset all players (health to 0 to trigger respawn)
       Object.values(game.players).forEach(player => {
@@ -361,9 +356,12 @@ app.get('/api/leaderboard', async (req: Request, res: Response): Promise<void> =
     const metric = req.query.metric as string || 'kills';
     const limit = parseInt(req.query.limit as string) || 10;
     
+    console.log(`🏆 Leaderboard API called with metric: ${metric}, limit: ${limit}`);
+    
     // Validate metric parameter
     const validMetrics = ['kills', 'kdr', 'accuracy', 'time_alive'];
     if (!validMetrics.includes(metric)) {
+      console.warn(`❌ Invalid leaderboard metric requested: ${metric}`);
       res.status(400).json({
         success: false,
         error: 'Invalid metric. Must be one of: kills, kdr, accuracy, time_alive'
@@ -371,18 +369,70 @@ app.get('/api/leaderboard', async (req: Request, res: Response): Promise<void> =
       return;
     }
     
+    // Validate limit parameter
+    if (limit < 1 || limit > 100) {
+      console.warn(`❌ Invalid leaderboard limit requested: ${limit}`);
+      res.status(400).json({
+        success: false,
+        error: 'Limit must be between 1 and 100'
+      });
+      return;
+    }
+    
+    console.log(`🏆 Fetching leaderboard data from Supabase...`);
+    
     // Get leaderboard data from Supabase
     const leaderboard = await getLeaderboard(metric as any, limit);
     
+    console.log(`🏆 Retrieved ${leaderboard.length} leaderboard entries from Supabase`);
+    
+    if (leaderboard.length === 0) {
+      console.log(`🏆 No leaderboard data found - this is normal if no games have been played yet`);
+    } else {
+      console.log(`🏆 Leaderboard sample (first entry):`, JSON.stringify(leaderboard[0], null, 2));
+    }
+    
     res.json({
       success: true,
-      data: leaderboard
+      data: leaderboard,
+      meta: {
+        metric,
+        limit,
+        count: leaderboard.length
+      }
     });
   } catch (error) {
     console.error('❌ Leaderboard API error:', error);
+    console.error('❌ Error stack:', error instanceof Error ? error.stack : 'No stack trace available');
     res.status(500).json({
       success: false,
-      error: 'Failed to fetch leaderboard data'
+      error: 'Failed to fetch leaderboard data',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+// Constants endpoint - provides game constants to frontend
+app.get('/api/constants', (req: Request, res: Response): void => {
+  try {
+    res.json({
+      success: true,
+      data: {
+        GAME_CONFIG,
+        AMMO_CONFIG,
+        VISUAL_CONFIG,
+        NOTIFICATION_COLORS,
+        RENDERING_CONFIG,
+        SPAWN_POINTS,
+        DEFAULT_STATS,
+        CALCULATED_VALUES
+      }
+    });
+  } catch (error) {
+    console.error('❌ Constants API error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch constants'
     });
   }
 });
@@ -417,11 +467,14 @@ io.on("connection", (socket: Socket) => {
    * handle user authentication for socket connection
    */
   socket.on("authenticateUser", (userInfo: any) => {
+    console.log(`🔐 Socket ${socket.id} attempting authentication with user info:`, JSON.stringify(userInfo, null, 2));
+    
     if (validateUserInfo(userInfo)) {
       registerAuthenticatedUser(socket.id, userInfo);
+      console.log(`✅ Socket ${socket.id} authenticated successfully as ${userInfo.name} (${userInfo.id})`);
       socket.emit("authenticationConfirmed", { success: true });
     } else {
-      console.warn(`⚠️ Invalid user info for socket ${socket.id}:`, userInfo);
+      console.warn(`⚠️ Socket ${socket.id} authentication failed - invalid user info:`, userInfo);
       socket.emit("authenticationConfirmed", { success: false, error: "Invalid user info" });
     }
   });
@@ -683,9 +736,9 @@ async function startServer() {
     initSupabase();
     
     // Start the HTTP server
-    server.listen(PORT, () => {
-      console.log(`🚀 Food Wars server cooking on port ${PORT}`);
-      console.log(`🌐 Visit http://localhost:${PORT} to start battling!`);
+    server.listen(SERVER_CONFIG.PORT, () => {
+      console.log(`🚀 Food Wars server cooking on port ${SERVER_CONFIG.PORT}`);
+      console.log(`🌐 Visit http://localhost:${SERVER_CONFIG.PORT} to start battling!`);
     });
   } catch (error) {
     console.error('❌ Failed to start server:', error);

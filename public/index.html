@@ -72,6 +72,12 @@
     <div id="auth-section" class="fixed top-4 right-4 z-50">
       <!-- Login Section (shown when not authenticated) -->
       <div id="login-section" class="glass-effect rounded-xl p-4 slide-in" style="display: none;">
+        <!-- Save Stats Note -->
+        <div class="mb-4 text-center bg-gradient-to-r from-chef-yellow/60 to-chef-orange/60 rounded-lg p-3 border border-chef-yellow/80 backdrop-blur-sm">
+          <p class="text-white text-sm font-bold font-game drop-shadow-sm">Save Your Stats</p>
+          <p class="text-white/90 text-xs font-semibold">Log in to appear on the leaderboard!</p>
+        </div>
+        
         <button id="google-login-btn" class="bg-gradient-to-r from-chef-orange to-chef-red text-white px-6 py-2 rounded-lg font-semibold hover:shadow-lg transition-all duration-300 flex items-center gap-2">
           <i class="fab fa-google"></i>
           Login with Google
@@ -79,13 +85,34 @@
       </div>
       
       <!-- User Section (shown when authenticated) -->
-      <div id="user-section" class="glass-effect rounded-xl p-4 flex items-center gap-3 slide-in" style="display: none;">
-        <img id="user-avatar" src="" alt="Chef Avatar" class="w-10 h-10 rounded-full border-2 border-chef-yellow" style="display: none;">
-        <span id="user-name" class="text-white font-semibold">Chef</span>
-        <button id="logout-btn" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg text-sm transition-all duration-300">
-          <i class="fas fa-sign-out-alt mr-1"></i>
-          Logout
-        </button>
+      <div id="user-section" class="glass-effect rounded-xl p-4 slide-in" style="display: none;">
+        <div class="flex items-center gap-3 mb-3">
+          <img id="user-avatar" src="" alt="Chef Avatar" class="w-10 h-10 rounded-full border-2 border-chef-yellow" style="display: none;">
+          <span id="user-name" class="text-white font-semibold">Chef</span>
+          <button id="logout-btn" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg text-sm transition-all duration-300">
+            <i class="fas fa-sign-out-alt mr-1"></i>
+            Logout
+          </button>
+        </div>
+        
+        <!-- Username Change Section -->
+        <div class="border-t border-white/20 pt-3">
+          <div class="username-input-container">
+            <div class="flex gap-2">
+              <input type="text" 
+                     id="new-username-input" 
+                     class="flex-1 bg-white/20 border border-white/30 rounded-lg px-3 py-2 text-white placeholder-white/70 focus:border-chef-yellow focus:outline-none text-sm font-game transition-colors duration-300"
+                     maxlength="12"
+                     placeholder="New username">
+              <button id="save-username-btn" 
+                      class="bg-gradient-to-r from-chef-green to-emerald-600 hover:from-chef-green/90 hover:to-emerald-600/90 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-300">
+                Save
+              </button>
+            </div>
+            <!-- Availability feedback will be inserted here by JavaScript -->
+          </div>
+          <p class="text-white/60 text-xs mt-2">Update your chef name for all saved stats</p>
+        </div>
       </div>
     </div>
 

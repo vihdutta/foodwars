@@ -7,7 +7,7 @@
 import type { PlayerStats } from './types.js';
 
 // Constants imports
-import { GAME_DURATION_SECONDS, GAME_ENDED_AUTO_RETURN_SECONDS } from './constants.js';
+import { GAME_DURATION_SECONDS, GAME_ENDED_AUTO_RETURN_SECONDS } from './constants-loader.js';
 
 // Countdown utility imports
 import { startCountdown, stopCountdown } from './countdown-timer.js';

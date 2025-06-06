@@ -26,6 +26,7 @@ export async function saveEndGameStats(
   playerSocketIds: string[]
 ): Promise<StatsSaveResult> {
   console.log(`📊 Starting end-game stats save for room ${roomId}`);
+  console.log(`📊 Player socket IDs to process: [${playerSocketIds.join(', ')}]`);
   
   const result: StatsSaveResult = {
     totalPlayers: playerSocketIds.length,
@@ -34,11 +35,22 @@ export async function saveEndGameStats(
     errors: []
   };
 
+  // Debug: Check which players are authenticated
+  console.log(`🔍 Checking authentication status for each player:`);
+  for (const socketId of playerSocketIds) {
+    const isAuth = isAuthenticated(socketId);
+    const userInfo = getUserInfo(socketId);
+    console.log(`  - Socket ${socketId}: authenticated=${isAuth}, userInfo=${userInfo ? JSON.stringify(userInfo) : 'null'}`);
+  }
+
   const allPlayerStats = await getAllPlayerStats(roomId);
+  console.log(`📊 Retrieved ${allPlayerStats.length} player stats from Redis for room ${roomId}`);
+  
   const statsMap = new Map<string, PlayerStats & { username: string; socketId: string }>();
   
   for (const playerStat of allPlayerStats) {
     statsMap.set(playerStat.socketId, playerStat);
+    console.log(`📊 Mapped stats for socket ${playerStat.socketId}: ${JSON.stringify(playerStat)}`);
   }
 
   const savePromises = playerSocketIds.map(socketId => 
@@ -54,6 +66,8 @@ export async function saveEndGameStats(
     if (promiseResult.status === 'fulfilled') {
       const playerResult = promiseResult.value;
       
+      console.log(`📊 Save result for socket ${socketId}:`, JSON.stringify(playerResult, null, 2));
+      
       if (playerResult.userInfo) {
         result.authenticatedPlayers++;
       }
@@ -64,6 +78,7 @@ export async function saveEndGameStats(
         result.errors.push(`${socketId}: ${playerResult.error}`);
       }
     } else {
+      console.error(`❌ Promise rejected for socket ${socketId}:`, promiseResult.reason);
       result.errors.push(`${socketId}: Promise rejected - ${promiseResult.reason}`);
     }
   }
@@ -91,39 +106,54 @@ async function savePlayerStats(
     success: false
   };
 
+  console.log(`📊 Processing stats save for socket ${socketId} in room ${roomId}`);
+
   try {
     if (!isAuthenticated(socketId)) {
+      console.log(`❌ Socket ${socketId} is not authenticated - skipping stats save`);
       return { ...result, error: 'Player not authenticated' };
     }
 
+    console.log(`✅ Socket ${socketId} is authenticated`);
+
     const userInfo = getUserInfo(socketId);
     if (!userInfo || !isValidUserInfo(userInfo)) {
+      console.log(`❌ Socket ${socketId} has invalid user info:`, userInfo);
       return { ...result, error: 'Invalid user info' };
     }
 
+    console.log(`✅ Socket ${socketId} has valid user info:`, JSON.stringify(userInfo));
     result.userInfo = userInfo;
 
     if (!playerStats) {
+      console.log(`❌ Socket ${socketId} has no stats data in Redis`);
       return { ...result, error: 'No stats found for player' };
     }
 
+    console.log(`✅ Socket ${socketId} has stats data:`, JSON.stringify(playerStats));
+
     const validatedStats = validateAndFormatStats(playerStats);
     if (!validatedStats) {
+      console.log(`❌ Socket ${socketId} has invalid stats data:`, playerStats);
       return { ...result, error: 'Invalid stats data' };
     }
 
+    console.log(`✅ Socket ${socketId} has validated stats:`, JSON.stringify(validatedStats));
     result.stats = validatedStats;
 
+    console.log(`📊 Calling saveGameStats for socket ${socketId} with user ${userInfo.name} (${userInfo.id})`);
     const saveSuccess = await saveGameStats(userInfo, validatedStats, roomId);
     
     if (saveSuccess) {
       result.success = true;
-      console.log(`✅ Stats saved for ${userInfo.name} (${socketId})`);
+      console.log(`✅ Stats saved successfully for ${userInfo.name} (${socketId})`);
     } else {
+      console.log(`❌ Failed to save stats to Supabase for ${userInfo.name} (${socketId})`);
       result.error = 'Failed to save to Supabase';
     }
 
   } catch (error) {
+    console.error(`❌ Exception during stats save for socket ${socketId}:`, error);
     result.error = `Exception during save: ${error instanceof Error ? error.message : String(error)}`;
   }
 

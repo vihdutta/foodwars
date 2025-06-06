@@ -7,28 +7,14 @@ import { Express } from "express";
 import session from "express-session";
 import passport from "passport";
 import { Strategy as GoogleStrategy } from "passport-google-oauth20";
+import { createOrUpdateUser, updateUserUsername, getUser, checkUsernameAvailability } from "../services/supabase.js";
 
 // Type imports
 import type { UserInfo } from "../types/game.js";
+import type { Request, Response } from "express";
 
-// session configuration constants
-const SESSION_CONFIG = {
-  secret: "secret", // todo: use environment variable for production
-  resave: false,
-  saveUninitialized: true,
-} as const;
-
-// google OAuth scopes for user data access
-const GOOGLE_SCOPES = ["profile", "email"];
-
-// authentication routes
-const AUTH_ROUTES = {
-  GOOGLE_LOGIN: "/auth/google",
-  GOOGLE_CALLBACK: "/auth/google/callback",
-  USER_INFO: "/auth/user",
-  LOGOUT: "/auth/logout",
-  LEGACY_LOGOUT: "/logout",
-} as const;
+// Constants import
+import { AUTH_CONFIG } from "../constants.js";
 
 /**
  * extracts user information from Google profile
@@ -47,7 +33,7 @@ function extractUserInfo(profile: any): UserInfo {
  */
 export function setupAuth(app: Express): void {
   // configure session middleware
-  app.use(session(SESSION_CONFIG));
+  app.use(session(AUTH_CONFIG.SESSION));
 
   // initialize passport middleware
   app.use(passport.initialize());
@@ -59,11 +45,27 @@ export function setupAuth(app: Express): void {
       {
         clientID: process.env.GOOGLE_CLIENT_ID,
         clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-        callbackURL: "https://foodwars.vihdutta.com" + AUTH_ROUTES.GOOGLE_CALLBACK,
+        callbackURL: "https://foodwars.vihdutta.com" + AUTH_CONFIG.ROUTES.GOOGLE_CALLBACK,
       },
-      function (accessToken, refreshToken, profile, done) {
-        // todo: implement user lookup/creation in database
-        return done(null, profile);
+      async function (accessToken, refreshToken, profile, done) {
+        try {
+          const userInfo = extractUserInfo(profile);
+          
+          // Create or update user in database
+          const { username, wasUsernameModified } = await createOrUpdateUser(userInfo);
+          
+          // Store additional info in session
+          const sessionUser = {
+            ...userInfo,
+            username,
+            wasUsernameModified
+          };
+          
+          return done(null, sessionUser);
+        } catch (error) {
+          console.error('❌ Error during Google OAuth callback:', error);
+          return done(error, null);
+        }
       }
     )
   );
@@ -80,13 +82,13 @@ export function setupAuth(app: Express): void {
 
   // google OAuth login initiation route
   app.get(
-    AUTH_ROUTES.GOOGLE_LOGIN,
-    passport.authenticate("google", { scope: GOOGLE_SCOPES })
+    AUTH_CONFIG.ROUTES.GOOGLE_LOGIN,
+    passport.authenticate("google", { scope: [...AUTH_CONFIG.GOOGLE_SCOPES] })
   );
 
   // google OAuth callback route
   app.get(
-    AUTH_ROUTES.GOOGLE_CALLBACK,
+    AUTH_CONFIG.ROUTES.GOOGLE_CALLBACK,
     passport.authenticate("google", { failureRedirect: "/" }),
     (req, res) => {
       // redirect with hash to signal successful authentication
@@ -95,17 +97,33 @@ export function setupAuth(app: Express): void {
   );
 
   // get current authenticated user information
-  app.get(AUTH_ROUTES.USER_INFO, (req, res) => {
+  app.get(AUTH_CONFIG.ROUTES.USER_INFO, async (req, res) => {
     if (req.isAuthenticated() && req.user) {
-      const userInfo = extractUserInfo(req.user as any);
-      res.json(userInfo);
+      try {
+        const userInfo = extractUserInfo(req.user as any);
+        const sessionUser = req.user as any;
+        
+        // Get the most up-to-date user info from database
+        const dbUser = await getUser(userInfo.id);
+        
+        const response = {
+          ...userInfo,
+          username: dbUser?.username || sessionUser.username || userInfo.name,
+          wasUsernameModified: sessionUser.wasUsernameModified || false
+        };
+        
+        res.json(response);
+      } catch (error) {
+        console.error('❌ Error fetching user info:', error);
+        res.status(500).json({ error: "Failed to fetch user information" });
+      }
     } else {
       res.status(401).json({ error: "Not authenticated" });
     }
   });
 
   // logout endpoint (JSON response for frontend)
-  app.get(AUTH_ROUTES.LOGOUT, (req, res) => {
+  app.get(AUTH_CONFIG.ROUTES.LOGOUT, (req, res) => {
     req.logOut((err) => {
       if (err) {
         return res.status(500).json({ error: "Logout failed" });
@@ -114,8 +132,62 @@ export function setupAuth(app: Express): void {
     });
   });
 
-  // legacy logout endpoint (redirect response)
-  app.get(AUTH_ROUTES.LEGACY_LOGOUT, (req, res) => {
+  // username update endpoint
+  app.post("/auth/update-username", async (req: Request, res: Response): Promise<void> => {
+    if (!req.isAuthenticated() || !req.user) {
+      res.status(401).json({ error: "Not authenticated" });
+      return;
+    }
+
+    const { newUsername } = req.body;
+    if (!newUsername || typeof newUsername !== 'string') {
+      res.status(400).json({ error: "Invalid username" });
+      return;
+    }
+
+    try {
+      const userInfo = extractUserInfo(req.user as any);
+      const result = await updateUserUsername(userInfo.id, newUsername);
+      
+      if (result.success) {
+        res.json({ success: true, username: result.username });
+      } else {
+        res.status(400).json({ error: result.error });
+      }
+    } catch (error) {
+      console.error('❌ Username update error:', error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // username availability check endpoint
+  app.post("/auth/check-username-availability", async (req: Request, res: Response): Promise<void> => {
+    const { username } = req.body;
+    
+    if (!username || typeof username !== 'string') {
+      res.status(400).json({ available: false, error: "Invalid username" });
+      return;
+    }
+
+    try {
+      // If user is authenticated, exclude their current user ID from the check
+      // This allows them to check availability for their own username changes
+      let excludeGoogleUserId: string | undefined;
+      if (req.isAuthenticated() && req.user) {
+        const userInfo = extractUserInfo(req.user as any);
+        excludeGoogleUserId = userInfo.id;
+      }
+
+      const result = await checkUsernameAvailability(username, excludeGoogleUserId);
+      res.json(result);
+    } catch (error) {
+      console.error('❌ Username availability check error:', error);
+      res.status(500).json({ available: false, error: "Internal server error" });
+    }
+  });
+
+  // legacy logout route for backwards compatibility
+  app.get(AUTH_CONFIG.ROUTES.LEGACY_LOGOUT, (req, res) => {
     req.logOut((err) => {
       if (err) {
         return res.status(500).send("Logout failed");

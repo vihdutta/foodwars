@@ -4,14 +4,7 @@
  */
 
 import type { Text } from 'pixi.js';
-
-// ===== CONSTANTS =====
-const AMMO_CONFIG = {
-    MAX_MAGAZINE: 30,
-    STARTING_RESERVE: 240,
-    RELOAD_TIME_MS: 3000,
-    SHOOTING_COOLDOWN: 1000 / 10, // 10 shots per second (matches server)
-} as const;
+import { getAmmoConfig } from './constants-loader.js';
 
 // ===== AMMO STATE =====
 interface AmmoState {
@@ -21,6 +14,15 @@ interface AmmoState {
     reloadStartTime: number;
     lastShotTime: number;
 }
+
+// Load ammo configuration from backend
+const ammoConfig = await getAmmoConfig();
+const AMMO_CONFIG = ammoConfig || {
+    MAX_MAGAZINE: 30,
+    STARTING_RESERVE: 240,
+    RELOAD_TIME_MS: 3000,
+    SHOOTING_COOLDOWN: 100,
+};
 
 let ammoState: AmmoState = {
     magazine: AMMO_CONFIG.MAX_MAGAZINE,

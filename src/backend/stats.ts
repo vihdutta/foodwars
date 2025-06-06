@@ -12,17 +12,10 @@ import type {
   GameSocket
 } from "../types/game.js";
 
-// ===== CONSTANTS =====
+// Constants import
+import { DEFAULT_STATS } from "../constants.js";
 
-const DEFAULT_STATS: PlayerStats = {
-  kills: 0,
-  deaths: 0,
-  damageDealt: 0,
-  shotsFired: 0,
-  shotsHit: 0,
-  timeAlive: 0,
-  gamesPlayed: 0,
-};
+// ===== CONSTANTS =====
 
 // ===== STAT INITIALIZATION =====
 

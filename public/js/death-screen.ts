@@ -7,7 +7,7 @@
 import type { DeathInfo, PlayerStats } from './types.js';
 
 // Constants imports
-import { RESPAWN_COUNTDOWN_SECONDS } from './constants.js';
+import { RESPAWN_COUNTDOWN_SECONDS } from './constants-loader.js';
 
 // Countdown utility imports
 import { startCountdown, stopCountdown, stopAllCountdowns, createCountdownElement } from './countdown-timer.js';

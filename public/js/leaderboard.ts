@@ -3,7 +3,7 @@
  */
 
 export interface LeaderboardEntry {
-  user_id: string;
+  google_user_id: string;
   username: string;
   total_kills: number;
   total_deaths: number;
@@ -12,6 +12,10 @@ export interface LeaderboardEntry {
   total_time_alive: number;
   total_games: number;
   last_played: string;
+  total_damage_dealt: number;
+  total_shots_fired: number;
+  total_shots_hit: number;
+  best_game_kills: number;
 }
 
 /**
@@ -226,17 +230,26 @@ export class LeaderboardManager {
    * Fetches leaderboard data from API
    */
   private async fetchLeaderboardData(metric: string): Promise<LeaderboardEntry[]> {
+    console.log(`🏆 Fetching leaderboard data for metric: ${metric}`);
+    
     const response = await fetch(`/api/leaderboard?metric=${metric}&limit=10`);
     
+    console.log(`🏆 Leaderboard API response status: ${response.status}`);
+    
     if (!response.ok) {
+      console.error(`❌ Leaderboard API HTTP error: ${response.status} ${response.statusText}`);
       throw new Error(`HTTP error! status: ${response.status}`);
     }
     
     const result = await response.json();
+    console.log(`🏆 Leaderboard API result:`, result);
     
     if (!result.success) {
+      console.error(`❌ Leaderboard API returned error:`, result.error);
       throw new Error(result.error || 'Failed to fetch leaderboard');
     }
+    
+    console.log(`🏆 Successfully fetched ${result.data.length} leaderboard entries`);
     
     return result.data;
   }

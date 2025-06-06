@@ -43,6 +43,9 @@ import {
 } from './movement.js';
 import { updateCamera } from './camera.js';
 
+// constants imports
+import { getRenderingConfig } from './constants-loader.js';
+
 // external library declarations
 declare const PIXI: any;
 declare const io: any;
@@ -90,45 +93,6 @@ interface EnemyUIElements {
   usernameText: any;
 }
 
-// ===== CONSTANTS =====
-
-// pixi.js application constants
-const PIXI_CONFIG = {
-  width: 500,
-  height: 500,
-  backgroundAlpha: 1,
-  antialias: true,
-  resolution: window.devicePixelRatio,
-  resizeTo: window,
-} as const;
-
-// game constants (preserve exact math values)
-const GAME_CONSTANTS = {
-  PLAYER_LENGTH: 70,
-  ENEMY_SPRITE_SCALE: 2,
-  ENEMY_ANCHOR: 0.5,
-  ENEMY_POSITION_OFFSET_X: 32 - 4, // preserve exact math
-  ENEMY_POSITION_OFFSET_Y: 32 - 4, // preserve exact math
-  ENEMY_UI_Y_OFFSET: -50,
-  HEALTH_BAR_BASE_WIDTH: 60,
-  HEALTH_BAR_BASE_HEIGHT: 6,
-  HEALTH_BAR_VALUE_MULTIPLIER: 0.6,
-  HEALTH_BAR_VALUE_OFFSET: -2,
-  HEALTH_BAR_VALUE_HEIGHT: 4,
-  HEALTH_BAR_X_OFFSET: -10,
-  HEALTH_BAR_Y_BASE: 120,
-  HEALTH_BAR_Y_DIVISOR: 6,
-  SCREEN_WIDTH_DIVISOR: 1500,
-  SCREEN_SIZE_CLAMP: 100,
-} as const;
-
-// enemy UI bar configuration (preserve original values)
-const ENEMY_BAR_CONFIG = {
-  WIDTH: 50,
-  HEIGHT: 5,
-  Y_OFFSET: 8,
-} as const;
-
 // ===== GLOBAL VARIABLES =====
 
 // pixi.js setup
@@ -142,6 +106,11 @@ let playing = false;
 let username = " ";
 let lastPingSentTime: number = 0;
 let widthForHealthBar: number = 0;
+
+// Constants loaded from backend
+let PIXI_CONFIG: any;
+let GAME_CONSTANTS: any;
+let ENEMY_BAR_CONFIG: any;
 
 // Function to check if player is currently playing
 export function isPlayerPlaying(): boolean {
@@ -159,6 +128,44 @@ let boundingBoxes: {[key: string]: any} = {};
 const enemyUIElements: {[key: string]: EnemyUIElements} = {};
 const enemyUI: Record<string, EnemyUI> = {};
 const enemySprites: {[key: string]: any} = {};
+
+// ===== CONSTANTS INITIALIZATION =====
+
+// Load constants from backend
+const renderingConfig = await getRenderingConfig();
+PIXI_CONFIG = renderingConfig?.PIXI || {
+  width: 500,
+  height: 500,
+  backgroundAlpha: 1,
+  antialias: true,
+  resolution: window.devicePixelRatio,
+  resizeTo: window,
+};
+
+GAME_CONSTANTS = renderingConfig?.GAME || {
+  PLAYER_LENGTH: 70,
+  ENEMY_SPRITE_SCALE: 2,
+  ENEMY_ANCHOR: 0.5,
+  ENEMY_POSITION_OFFSET_X: 28,
+  ENEMY_POSITION_OFFSET_Y: 28,
+  ENEMY_UI_Y_OFFSET: -50,
+  HEALTH_BAR_BASE_WIDTH: 60,
+  HEALTH_BAR_BASE_HEIGHT: 6,
+  HEALTH_BAR_VALUE_MULTIPLIER: 0.6,
+  HEALTH_BAR_VALUE_OFFSET: -2,
+  HEALTH_BAR_VALUE_HEIGHT: 4,
+  HEALTH_BAR_X_OFFSET: -10,
+  HEALTH_BAR_Y_BASE: 120,
+  HEALTH_BAR_Y_DIVISOR: 6,
+  SCREEN_WIDTH_DIVISOR: 1500,
+  SCREEN_SIZE_CLAMP: 100,
+};
+
+ENEMY_BAR_CONFIG = renderingConfig?.ENEMY_BAR || {
+  WIDTH: 50,
+  HEIGHT: 5,
+  Y_OFFSET: 8,
+};
 
 // ===== SOCKET SETUP =====
 

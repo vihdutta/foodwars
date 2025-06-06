@@ -2,7 +2,7 @@
  * notifications.ts - Efficient HTML notification system
  */
 
-import { NOTIFICATION_COLORS } from './constants.js';
+import { NOTIFICATION_COLORS } from './constants-loader.js';
 import { isPlayerPlaying, getCurrentUsername } from './client.js';
 
 class NotificationManager {

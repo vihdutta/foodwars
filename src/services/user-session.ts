@@ -120,14 +120,28 @@ export function cleanupStaleSessions(): void {
  * validates user info before storing in session
  */
 export function validateUserInfo(userInfo: any): userInfo is UserInfo {
-  return (
+  console.log('🔍 Validating user info:', JSON.stringify(userInfo, null, 2));
+  
+  const isValid = (
     userInfo &&
     typeof userInfo === 'object' &&
     typeof userInfo.id === 'string' &&
-    typeof userInfo.name === 'string' &&
     userInfo.id.length > 0 &&
-    userInfo.name.length > 0
+    (typeof userInfo.name === 'string' && userInfo.name.length > 0)
   );
+  
+  if (!isValid) {
+    console.warn('❌ Invalid user info detected:');
+    console.warn('  - userInfo exists:', !!userInfo);
+    console.warn('  - is object:', typeof userInfo === 'object');
+    console.warn('  - has id:', typeof userInfo?.id === 'string' && userInfo?.id?.length > 0);
+    console.warn('  - has name:', typeof userInfo?.name === 'string' && userInfo?.name?.length > 0);
+    console.warn('  - actual userInfo:', userInfo);
+  } else {
+    console.log('✅ User info validation passed');
+  }
+  
+  return isValid;
 }
 
 /**

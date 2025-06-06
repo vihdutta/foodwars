@@ -8,7 +8,7 @@ import {
   GLASS_BLUR, 
   GLASS_BACKGROUND_OPACITY, 
   GLASS_BORDER_OPACITY 
-} from './constants.js';
+} from './constants-loader.js';
 
 /**
  * applies glass morphism effect to an element

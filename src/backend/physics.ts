@@ -3,6 +3,18 @@
  * handles player movement, bullet collisions, and wall interactions
  */
 
+// Imports
+import { 
+  recordShotFired, 
+  recordKill, 
+  recordDeath, 
+  sendDeathScreen, 
+  broadcastKillNotification,
+  recordShotHit 
+} from "./stats.js";
+import { incrementPlayerStat } from "../services/redis.js";
+import { GAME_CONFIG } from "../constants.js";
+
 // Type imports
 import type {
   ServerPlayer,
@@ -14,30 +26,18 @@ import type {
   GameSocket
 } from "../types/game.js";
 
-// Stats imports
-import {
-  recordShotHit,
-  recordKill,
-  recordDeath,
-  sendDeathScreen,
-  broadcastKillNotification,
-} from "./stats.js";
-
-// Redis imports
-import { incrementPlayerStat } from "../services/redis.js";
-
 // ===== CONSTANTS =====
 
 // bullet movement speed in pixels per second
-const BULLET_SPEED = 2000;
+const BULLET_SPEED = GAME_CONFIG.BULLET_SPEED;
 
 // player movement constants
-const PLAYER_BASE_SPEED = 3;
-const PLAYER_SPRINT_BONUS = 1.5;
-const BULLET_DAMAGE = 10;
+const PLAYER_BASE_SPEED = GAME_CONFIG.PLAYER_BASE_SPEED;
+const PLAYER_SPRINT_BONUS = GAME_CONFIG.PLAYER_SPRINT_BONUS;
+const BULLET_DAMAGE = GAME_CONFIG.BULLET_DAMAGE;
 
 // world boundaries for bullet cleanup
-const WORLD_BOUNDARY = 5000;
+const WORLD_BOUNDARY = GAME_CONFIG.WORLD_BOUNDARY;
 
 // ===== COLLISION DETECTION =====
 
