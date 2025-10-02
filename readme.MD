@@ -1,28 +1,24 @@
 # Deploy Instructions
 
+Create a `.env` file in the root directory with a `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`
+
+Add the `.env` file to the foodwars-app section of the docker-compose.yml file for local use.
+
 docker build -t app .
 
-(in Google SDK Console)
-gcloud auth login
-docker tag app us.gcr.io/(project_id)/app
-docker push us.gcr.io/(project_id)/app
+You can also do `npm install` and `npm run dev` for development
 
-# Optimization
+## Tech stack
 
-## collisions
-use spatial hashing
-fix tunneling
-
-## data transfer
-##### use client-side approximations to "complete" the animation and reduce the server-update times
-send enemy positional data 10ms -> 50ms a second
-send bullet data 1ms -> 5ms a second
-
-## features
-make it so you can break some walls. if they're broken and people walk through the broken bits, reduced movement speed
-
-## running
-use `npm run build` to create the `.js` files and then run the project with `npm run dev`
+- Node.js (TypeScript)
+- Express
+- Socket.IO (real-time)
+- PixiJS (client rendering)
+- Redis (real-time game leaderboard)
+- Supabase / PostgreSQL (persistent storage of user data, overall leaderboards)
+- Passport (Google OAuth)
+- Docker
+- Tailwind CSS
 
 ## future features
 
